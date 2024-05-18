@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from @expo/vector-icons
 
 const DietMenu = ({ navigation }) => {
@@ -8,17 +8,38 @@ const DietMenu = ({ navigation }) => {
         navigation.navigate('HomeMain');
     };
 
+    const mealPlans = [
+        { id: '1', name: 'Chicken Biryani Combo', image: 'https://example.com/chicken-biryani.jpg' },
+        { id: '2', name: 'Paneer Butter Masala Combo', image: 'https://example.com/paneer-butter-masala.jpg' },
+        { id: '3', name: 'Chole Bhature Combo', image: 'https://example.com/chole-bhature.jpg' },
+        { id: '4', name: 'Masala Dosa Combo', image: 'https://example.com/masala-dosa.jpg' },
+        { id: '5', name: 'Butter Chicken Combo', image: 'https://example.com/butter-chicken.jpg' },
+    ];
+
+    const renderMealPlan = ({ item }) => (
+        <View style={styles.mealPlanItem}>
+            <Image source={{ uri: item.image }} style={styles.mealPlanImage} />
+            <Text style={styles.mealPlanText}>{item.name}</Text>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={goToHome} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={30} color="black" />
-                    <Text style={styles.backText}></Text>
+                    <Text style={styles.backText}>Back</Text>
                 </TouchableOpacity>
-                <Text style={styles.heading}>Diet Plan</Text>
+                <Text style={styles.heading}>Chef 2</Text>
             </View>
-            <View>
-                <Text style={styles.subheading}>This is the Diet plan</Text>
+            <View style={styles.content}>
+                <Text style={styles.subheading}>Meals offered by Chef 2</Text>
+                <FlatList 
+                    data={mealPlans}
+                    renderItem={renderMealPlan}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.mealPlansList}
+                />
             </View>
         </View>
     );
@@ -27,7 +48,7 @@ const DietMenu = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#EDF3EB", // Adjust space between header/options/footer
+        backgroundColor: "#EDF3EB",
     },
     header: {
         flexDirection: 'row',
@@ -38,7 +59,7 @@ const styles = StyleSheet.create({
     heading: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginLeft: 10, // Add margin to separate heading from back arrow
+        marginLeft: 10,
     },
     backButton: {
         flexDirection: 'row',
@@ -46,11 +67,36 @@ const styles = StyleSheet.create({
     },
     backText: {
         fontSize: 18,
-        marginLeft: 5, // Add margin to separate back arrow from text
+        marginLeft: 5,
+    },
+    content: {
+        flex: 1,
+        alignItems: 'center',
     },
     subheading: {
         fontSize: 16,
-        marginTop: "50%",
+        marginVertical: 20,
+        textAlign: 'center',
+    },
+    mealPlansList: {
+        alignItems: 'center',
+    },
+    mealPlanItem: {
+        backgroundColor: '#fff',
+        padding: 15,
+        borderRadius: 10,
+        marginVertical: 10,
+        alignItems: 'center',
+        width: '90%',
+    },
+    mealPlanImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 10,
+    },
+    mealPlanText: {
+        fontSize: 16,
+        marginTop: 10,
         textAlign: 'center',
     },
 });

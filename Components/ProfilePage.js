@@ -1,18 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from @expo/vector-icons
 import { FIREBASE_AUTH } from '../_utils/FirebaseConfig';
 
 const ProfilePage = () => {
 
-    const LogOut = () => {FIREBASE_AUTH.signOut()};
-    
+  const LogOut = () => { FIREBASE_AUTH.signOut() };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.heading}>Profile</Text>
       </View>
-      <Button style={styles.logout} title="Logout" onPress={LogOut} />
+      <TouchableOpacity style={styles.logoutButton} onPress={LogOut}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -31,8 +33,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  logout: {
-    margin: 10,
+  logoutButton: {
+    backgroundColor: "#FE660F", // You can change this color as per your preference
+    padding: 10,
+    borderRadius: 20, // Curved corners
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutButtonText: {
+    color: '#fff', // White text color
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

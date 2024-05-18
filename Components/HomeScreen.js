@@ -25,15 +25,15 @@ const HomeScreen = ({ navigation }) => {
       </View>
       <View style={styles.optionsContainer}>
         <TouchableOpacity style={styles.optionButton} onPress={goToBasic}>
-          <Text style={styles.optionText}>Basic</Text>
+          <Text style={styles.optionText}>Chef 1</Text>
           <Ionicons name="arrow-forward-circle" size={24} color="black" style={styles.arrowIcon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.optionButton} onPress={goToDiet}>
-          <Text style={styles.optionText}>Diet</Text>
+          <Text style={styles.optionText}>Chef 2</Text>
           <Ionicons name="arrow-forward-circle" size={24} color="black" style={styles.arrowIcon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.optionButton} onPress={goToPremium}>
-          <Text style={styles.optionText}>Premium</Text>
+          <Text style={styles.optionText}>Chef 3</Text>
           <Ionicons name="arrow-forward-circle" size={24} color="black" style={styles.arrowIcon} />
         </TouchableOpacity>
       </View>
