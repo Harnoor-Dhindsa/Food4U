@@ -5,17 +5,18 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth';
 import { FIREBASE_AUTH } from './_utils/FirebaseConfig';
-import HomeScreen from './Components/HomeScreen';
-import ProfileScreen from './Components/ProfilePage';
+import HomeScreen from './Components/Screens/HomeScreen';
+import ProfileScreen from './Components/Screens/ProfilePage';
 import Ionicons from 'react-native-vector-icons/Ionicons'; // Import Ionicons from react-native-vector-icons
-import Screen from './Components/Screen';
-import LoginScreen from './Components/LoginScreen';
-import SignupScreen from './Components/SignupScreen';
+import Screen from './Components//Screens/Screen';
+import LoginScreen from './Components/Screens/LoginScreen';
+import SignupScreen from './Components/Screens/SignupScreen';
 import BasicMenu from './Components/Menu/BasicMenu';
 import DietMenu from './Components/Menu/DietMenu';
 import PremiumMenu from './Components/Menu/PremiumMenu';
-import FavScreen from './Components/FavScreen';
-import CartScreen from './Components/CartScreen';
+import FavScreen from './Components/Screens/FavScreen';
+import CartScreen from './Components/Screens/CartScreen';
+import SelectionScreen from './Components/Screens/SelectionScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -137,6 +138,7 @@ export default function App() {
           ) : (
             <>
               <Stack.Screen name="Screen" component={Screen} options={{ headerShown: false }} />
+              <Stack.Screen name="SelectionScreen" component={SelectionScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
             </>

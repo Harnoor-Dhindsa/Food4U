@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from @expo/vector-icons
-import { FIREBASE_AUTH } from '../_utils/FirebaseConfig';
+import { FIREBASE_AUTH } from '../../_utils/FirebaseConfig';
 
 const ProfilePage = () => {
 

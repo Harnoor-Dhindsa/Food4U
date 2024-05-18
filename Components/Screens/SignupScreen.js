@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView } from 'react-native';
-import { FIREBASE_AUTH } from '../_utils/FirebaseConfig';
+import { FIREBASE_AUTH } from '../../_utils/FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 
