@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ImageBackground } from 'react-native';
 
 const SelectionScreen = ({navigation}) => {
 
@@ -7,45 +7,56 @@ const SelectionScreen = ({navigation}) => {
         navigation.navigate('Signup');
     };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.mainHeading}>WELCOME TO FOOD4U</Text>
-      <Text style={styles.subHeading}>Choose Who You Are</Text>
-      <TouchableOpacity style={styles.buttonChef} onPress={goToRegister}>
-        <Text style={styles.buttonText}>Chief</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.buttonStu} onPress={goToRegister}>
-        <Text style={styles.buttonText}>Student</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    return (
+        <ImageBackground 
+            source={require('../Images/screen2.jpg')} // Replace with your image URL
+            style={styles.background}
+        >
+            <View style={styles.overlay}>
+                <View style={styles.box}>
+                    <Text style={styles.subHeading}>Choose Who You Are</Text>
+                    <TouchableOpacity style={styles.buttonChef} onPress={goToRegister}>
+                        <Text style={styles.buttonTextchef}>CHEF</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.buttonStu} onPress={goToRegister}>
+                        <Text style={styles.buttonTextstu}>STUDENT</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </ImageBackground>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
-    alignItems: 'center',
-    padding: 20,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
   },
-  mainHeading: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    marginTop: 70,
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  box: {
+    padding: 20,
+    width: '100%',
+    alignItems: 'center',
   },
   subHeading: {
-    fontSize: 22,
+    fontSize: 30,
     fontWeight: 'bold',
-    marginTop: 60,
+    color: 'white',
+    marginBottom: 20,
   },
   buttonChef: {
-    backgroundColor: '#FE660F',
     padding: 20,
     borderRadius: 50,
+    borderColor: '#FE660F',
+    borderWidth: 2,
     width: "70%",
     alignItems: 'center',
     marginVertical: 10,
-    marginTop: 50,
   },
   buttonStu: {
     backgroundColor: '#FE660F',
@@ -55,7 +66,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
   },
-  buttonText: {
+  buttonTextchef: {
+    color: '#FE660F',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  buttonTextstu: {
     color: 'black',
     fontSize: 20,
     fontWeight: 'bold',
