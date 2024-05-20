@@ -16,7 +16,7 @@ const Screen = ({navigation}) => {
       </Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => {navigation.navigate('Login');}}
+        onPress={() => {navigation.navigate('Cheforuser');}}
       >
         <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>

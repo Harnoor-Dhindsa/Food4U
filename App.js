@@ -16,6 +16,8 @@ import DietMenu from './Components/Menu/DietMenu';
 import PremiumMenu from './Components/Menu/PremiumMenu';
 import FavScreen from './Components/FavScreen';
 import CartScreen from './Components/CartScreen';
+import ChefOrUserSelection from './Components/ChefOrUserSelection';
+import ChefLogin from './Components/ChefLogin'
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -139,6 +141,8 @@ export default function App() {
               <Stack.Screen name="Screen" component={Screen} options={{ headerShown: false }} />
               <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="Cheforuser" component={ChefOrUserSelection} options={{ headerShown: false }} />
+              <Stack.Screen name="Cheflogin" component={ChefLogin} options={{ headerShown: false }} />
             </>
           )}
         </Stack.Navigator>   
