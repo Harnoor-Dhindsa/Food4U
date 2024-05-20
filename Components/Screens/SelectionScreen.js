@@ -4,7 +4,11 @@ import { StyleSheet, Text, View, TouchableOpacity, ImageBackground } from 'react
 const SelectionScreen = ({navigation}) => {
 
     const goToRegister = () => {
-        navigation.navigate('Signup');
+        navigation.navigate('ChefSignup');
+    };
+
+    const goToStudentRegister = () => {
+        navigation.navigate('StudentSignup');
     };
 
     return (
@@ -18,7 +22,7 @@ const SelectionScreen = ({navigation}) => {
                     <TouchableOpacity style={styles.buttonChef} onPress={goToRegister}>
                         <Text style={styles.buttonTextchef}>CHEF</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.buttonStu} onPress={goToRegister}>
+                    <TouchableOpacity style={styles.buttonStu} onPress={goToStudentRegister}>
                         <Text style={styles.buttonTextstu}>STUDENT</Text>
                     </TouchableOpacity>
                 </View>

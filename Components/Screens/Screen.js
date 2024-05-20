@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, Text, StyleSheet, TouchableOpacity,} from 'react-native';
 
 const Screen = ({navigation}) => {
   return (
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: "30%",
     borderRadius: 50,
+    marginBottom: 50,
   },
   buttonText: {
     color: 'black',

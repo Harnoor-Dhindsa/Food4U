@@ -1,151 +1,31 @@
 import 'react-native-gesture-handler';
-import React, { useState, useEffect } from 'react';
-import { NavigationContainer, useIsFocused } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { onAuthStateChanged } from 'firebase/auth';
-import { FIREBASE_AUTH } from './_utils/FirebaseConfig';
-import HomeScreen from './Components/Screens/HomeScreen';
-import ProfileScreen from './Components/Screens/ProfilePage';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Import Ionicons from react-native-vector-icons
-import Screen from './Components//Screens/Screen';
-import LoginScreen from './Components/Screens/LoginScreen';
-import SignupScreen from './Components/Screens/SignupScreen';
-import BasicMenu from './Components/Menu/BasicMenu';
-import DietMenu from './Components/Menu/DietMenu';
-import PremiumMenu from './Components/Menu/PremiumMenu';
-import FavScreen from './Components/Screens/FavScreen';
-import CartScreen from './Components/Screens/CartScreen';
+import Screen from './Components/Screens/Screen';
 import SelectionScreen from './Components/Screens/SelectionScreen';
+import StudentLogin from './Components/Screens/Student/StudentLogin';
+import StudentSignup from './Components/Screens/Student/StudentSignup';
+import ChefLogin from './Components/Screens/Chef/ChefLogin';
+import ChefSignup from './Components/Screens/Chef/ChefSignup';
+import StudentHomeScreen from './Components/Screens/Student/StudentHomeScreen';
+import ChefHomeScreen from './Components/Screens/Chef/ChefHomeScreen';
 
-const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function HomeStack() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Basic" component={BasicMenu} options={{ headerShown: false }} />
-      <Stack.Screen name="Diet" component={DietMenu} options={{ headerShown: false }} />
-      <Stack.Screen name="Premium" component={PremiumMenu} options={{ headerShown: false }} />
-    </Stack.Navigator>
-  );
-}
-
-function ProfileStack() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-    </Stack.Navigator>
-  );
-}
-
-function FavStack() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name="Fav" component={FavScreen} options={{ headerShown: false }} />
-    </Stack.Navigator>
-  );
-}
-
-function CartStack() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name="CartMain" component={CartScreen} options={{ headerShown: false }} />
-    </Stack.Navigator>
-  );
-}
-
 export default function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    onAuthStateChanged(FIREBASE_AUTH, (user) => {
-      setUser(user);
-    });
-  }, []);
-
   return (
     <NavigationContainer>
-      {user ? (
-        <Tab.Navigator
-          screenOptions={{
-            tabBarActiveTintColor: '#FE660F',
-            tabBarInactiveTintColor: 'grey',
-            tabBarStyle: {
-              height: "9%",
-              backgroundColor: 'white',
-              borderTopWidth: 3,
-              borderTopColor: '#FE660F',
-              paddingVertical: 5,
-            },
-            tabBarLabelStyle: {
-              fontSize: 13,
-              fontWeight: 'bold',
-            },
-          }}>
-          <Tab.Screen
-            name="Home"
-            component={HomeStack}
-            options={{
-              tabBarLabel: 'Home',
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name={useIsFocused() ? "home" : "home-outline"} color={color} size={size} />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Favorites"
-            component={FavStack}
-            options={{
-              tabBarLabel: 'Favorites',
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name={useIsFocused() ? "heart" : "heart-outline"} color={color} size={size} />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Cart"
-            component={CartStack}
-            options={{
-              tabBarLabel: 'Cart',
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name={useIsFocused() ? "cart" : "cart-outline"} color={color} size={size} />
-              ),
-            }}
-          />
-          <Tab.Screen
-            name="Profile"
-            component={ProfileStack}
-            options={{
-              tabBarLabel: 'Profile',
-              headerShown: false,
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name={useIsFocused() ? "person" : "person-outline"} color={color} size={size} />
-              ),
-            }}
-          />
-        </Tab.Navigator>
-      ) : (   
-        <Stack.Navigator>
-          {user ? (
-            <>
-              <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Screen" component={Screen} options={{ headerShown: false }} />
-              <Stack.Screen name="SelectionScreen" component={SelectionScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
-            </>
-          )}
-        </Stack.Navigator>   
-      )}
+      <Stack.Navigator initialRouteName="Screen">
+        <Stack.Screen name="Screen" component={Screen} options={{ headerShown: false}}/>
+        <Stack.Screen name="SelectionScreen" component={SelectionScreen} options={{ headerShown: false}} />
+        <Stack.Screen name="StudentLogin" component={StudentLogin} options={{ headerShown: false}}/>
+        <Stack.Screen name="StudentSignup" component={StudentSignup} options={{ headerShown: false}}/>
+        <Stack.Screen name="ChefLogin" component={ChefLogin} options={{ headerShown: false}}/>
+        <Stack.Screen name="ChefSignup" component={ChefSignup} options={{ headerShown: false}}/>
+        <Stack.Screen name="StudentHomeScreen" component={StudentHomeScreen} options={{ headerShown: false}}/>
+        <Stack.Screen name="ChefHomeScreen" component={ChefHomeScreen} options={{ headerShown: false}}/>
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
