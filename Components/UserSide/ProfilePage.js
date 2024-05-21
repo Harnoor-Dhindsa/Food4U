@@ -1,39 +1,26 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from @expo/vector-icons
-import { FIREBASE_AUTH } from '../../_utils/FirebaseConfig';
+import React, { useState } from "react";
+import { View, Text, Button } from "react-native";
+import { FIREBASE_AUTH } from "../../_utils/FirebaseConfig";
 
-const ProfilePage = () => {
+const ProfilePage = ({ navigation }) => {
+  const [logoutError, setLogoutError] = useState(null);
 
-    const LogOut = () => {FIREBASE_AUTH.signOut()};
-    
+  const LogOut = () => {
+    FIREBASE_AUTH.signOut()
+      .then(() => {
+        navigation.replace("Screen");
+      })
+      .catch((error) => {
+        alert("Error in logging out");
+      });
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.heading}>Profile</Text>
-      </View>
-      <Button style={styles.logout} title="Logout" onPress={LogOut} />
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Text>Welcome to Profile!</Text>
+      <Button onPress={LogOut} title="LogOut" color="#000" />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: "#EDF3EB", // Adjust space between header/options/footer
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: "15%",
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  logout: {
-    margin: 10,
-  },
-});
 
 export default ProfilePage;

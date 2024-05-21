@@ -14,7 +14,7 @@ const LoginScreen = ({ navigation }) => {
     try{
       const response = await signInWithEmailAndPassword(auth, email, password);
       console.log(response);
-      navigation.replace('HomeScreen');
+      navigation.replace('StudentHomePage');
     } catch (error){
       console.log(error);
       alert("Check your email and password");

@@ -1,9 +1,9 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "react-native-vector-icons/Ionicons"; // Import Ionicons from react-native-vector-icons
-import HomeScreen from "./HomeScreen"; // Import your HomeScreen component
-import OrdersScreen from "./OrdersScreen"; // Import your OrdersScreen component
-import ProfileScreen from "./ProfileScreen"; // Import your ProfileScreen component
+import ChefMainPage from "./ChefMainPage";
+import OrdersScreen from "./OrdersScreen";
+import ProfileScreen from "./ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -42,7 +42,7 @@ const ChefHomeScreen = () => {
         },
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={ChefMainPage} />
       <Tab.Screen name="Orders" component={OrdersScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

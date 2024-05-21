@@ -15,14 +15,14 @@ const SignupScreen = ({navigation}) => {
     try{
       const response = await createUserWithEmailAndPassword(auth, email, password);
       console.log(response);
-      navigation.navigate('HomeScreen');
+      navigation.navigate('StudentHomePage');
     } catch (error){
       console.log(error);
       alert("Error in creating account" + error.message);
     }
   };
   const handleLogin = () => {
-    navigation.replace('Login');
+    navigation.replace('LoginScreen');
   };
 
   const goToFront = () => {

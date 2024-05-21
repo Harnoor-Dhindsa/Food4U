@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Button } from "react-native";
 
-const HomeScreen = () => {
+const ChefMainPage = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.heading}>HomeScreen</Text>
+        <Text style={styles.heading}>Upload Menu</Text>
       </View>
     </View>
   );
@@ -30,4 +30,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default ChefMainPage;
