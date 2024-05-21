@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView } from 'react-native';
-import { FIREBASE_AUTH } from '../_utils/FirebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { FIREBASE_AUTH } from '../../_utils/FirebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 
-const LoginScreen = ({ navigation }) => {
+const SignupScreen = ({navigation}) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const auth = FIREBASE_AUTH;
 
-  const handleSignIn = async () => {
+  const handleSignUp =  async () => {
     try{
-      const response = await signInWithEmailAndPassword(auth, email, password);
+      const response = await createUserWithEmailAndPassword(auth, email, password);
       console.log(response);
+      navigation.navigate('HomeScreen');
     } catch (error){
       console.log(error);
-      alert("Check your email and password");
+      alert("Error in creating account" + error.message);
     }
   };
-
-  const goToSignUp = () => {
-    // Navigate to the signup page
-    navigation.replace('Signup');
+  const handleLogin = () => {
+    navigation.replace('Login');
   };
 
   const goToFront = () => {
@@ -36,10 +36,17 @@ const LoginScreen = ({ navigation }) => {
       <TouchableOpacity onPress={goToFront} style={styles.backButton}>
           <Ionicons name="arrow-back" size={34} color="black" />
       </TouchableOpacity>
-      <Text style={styles.heading}>Welcome Back !</Text>
-      <Text style={styles.subheading}>It's nice to have you back</Text>
+      <Text style={styles.heading}>Sign Up !</Text>
+      <Text style={styles.subheading}>Create Your Account Now</Text>
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Email</Text>
+      <Text style={styles.label}>Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Your Name"
+          value={name}
+          onChangeText={setName}
+        />
+        <Text style={styles.labele}>Email</Text>
         <TextInput
           style={styles.input}
           placeholder="Enter your email"
@@ -52,19 +59,18 @@ const LoginScreen = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Enter your password"
-          secureTextEntry = {true}
+          secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
       </View>
-      <Text style={styles.forgot}>Forgot Password?</Text>
-      <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-        <Text style={styles.buttonText}>Sign In</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.signupButton} onPress={goToSignUp}>
+      <TouchableOpacity onPress={handleLogin}>
       <Text style={styles.textd}>
-        Don't have an account yet?{' '}
-        <Text style={styles.signup}>Sign up</Text>
+        Have an account?{' '}
+        <Text style={styles.signup}>Login</Text>
       </Text>
       </TouchableOpacity>
       </KeyboardAvoidingView>
@@ -75,21 +81,17 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
     paddingTop: "40%",
+    paddingHorizontal: 20,
     backgroundColor: "#EDF3EB",
   },
   backButton: {
     marginTop: -50,
-    marginBottom: "12%",
+    marginBottom: "10%",
   },
   heading: {
     fontSize: 34,
     fontWeight: 'bold',
-  },
-  subheading: {
-    fontSize: 16,
-    marginBottom: 20,
   },
   label: {
     marginTop: "10%",
@@ -97,44 +99,21 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     fontWeight: 'bold',
   },
-  labelp: {
-    marginTop: 20,
+  labele: {
+    marginTop: "8%",
     fontSize: 15,
     marginBottom: 5,
     fontWeight: 'bold',
   },
-  forgot: {
-    marginTop: 10,
-    color: '#FE660F',
-    fontWeight: 'bold',
-    fontSize: 16,
+  labelp: {
+    marginTop: "8%",
+    fontSize: 15,
     marginBottom: 5,
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-  },
-  button: {
-    marginTop: "12%",
-    backgroundColor: '#FE660F',
-    width: '100%',
-    height: 50,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: 'black',
-    fontSize: 18,
     fontWeight: 'bold',
   },
   textd: {
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 30,
     color: 'black',
     fontWeight: 'bold',
     fontSize: 15,
@@ -146,6 +125,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
+  input: {
+    width: '100%',
+    height: 50,
+    borderRadius: 2,
+    paddingHorizontal: 10,
+    backgroundColor: 'white',
+  },
+  button: {
+    backgroundColor: '#FE660F',
+    width: '100%',
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
+  },
+  buttonText: {
+    color: 'black',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
 
-export default LoginScreen;
+export default SignupScreen;
