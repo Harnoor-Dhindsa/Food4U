@@ -3,6 +3,8 @@ import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView 
 import { Picker } from '@react-native-picker/picker';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -13,27 +15,31 @@ const ProfileScreen = ({ navigation }) => {
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [location, setLocation] = useState('');
+  const [profilePic, setProfilePic] = useState(null);
 
   const user = FIREBASE_AUTH.currentUser;
 
   useEffect(() => {
     if (user) {
       loadUserProfile();
+      setEmail(user.email); // Set email to the user's email from Firebase Authentication
     }
   }, [user]);
 
   const loadUserProfile = async () => {
-    const docRef = doc(FIREBASE_DB, 'profiles', user.uid);
+    const docRef = doc(FIREBASE_DB, 'ChefsProfiles', user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const profileData = docSnap.data();
       setFirstName(profileData.firstName);
       setLastName(profileData.lastName);
-      setEmail(profileData.email);
-      setPhoneNumber(profileData.phoneNumber);
+      setPhoneNumber(profileData.phoneNumber)
       setGender(profileData.gender);
       setAge(profileData.age);
       setLocation(profileData.location);
+      if (profileData.profilePic) {
+        setProfilePic(profileData.profilePic);
+      }
     } else {
       console.log('No such document!');
     }
@@ -45,7 +51,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     if (user) {
-      await setDoc(doc(FIREBASE_DB, 'profiles', user.uid), {
+      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
         firstName,
         lastName,
         email,
@@ -68,10 +74,36 @@ const ProfileScreen = ({ navigation }) => {
       });
   };
 
+  const handleChoosePhoto = async () => {
+    let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      alert('Permission to access camera roll is required!');
+      return;
+    }
+  
+    let _image = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0,
+    });
+  
+    if (!_image.cancelled) {
+      await setProfilePic(_image.assets[0].uri);
+      console.log('Profile pic updated:', _image.uri);
+    }
+  };
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileContainer}>
-        <Image source={{ uri: 'https://via.placeholder.com/100' }} style={styles.profilePhoto} />
+        <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
+        {editMode && (
+          <TouchableOpacity style={styles.choosePhotoButton} onPress={handleChoosePhoto}>
+            <Text style={styles.buttonText}>Choose Photo</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.infoContainer}>
         <View style={styles.row}>
@@ -103,8 +135,7 @@ const ProfileScreen = ({ navigation }) => {
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={email}
-            editable={editMode}
-            onChangeText={setEmail}
+            editable={false} // Make email field non-editable
             placeholder="Email"
             placeholderTextColor="#ccc"
           />
@@ -181,7 +212,7 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#EDF3EB',
     padding: 20,
     alignItems: 'center', // Center the contents
   },
@@ -197,6 +228,13 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     borderWidth: 3,
     borderColor: '#fff',
+  },
+  choosePhotoButton: {
+    marginTop: 10,
+    backgroundColor: '#FE660F',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
   infoContainer: {
     width: '100%', // Take full width
