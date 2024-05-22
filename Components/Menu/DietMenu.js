@@ -90,9 +90,10 @@ const styles = StyleSheet.create({
         width: '90%',
     },
     mealPlanImage: {
-        width: '100%',
-        height: 200,
+        width: 200,
+        height: 150,
         borderRadius: 10,
+        marginBottom: 10,
     },
     mealPlanText: {
         fontSize: 16,

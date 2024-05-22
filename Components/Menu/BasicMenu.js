@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from @expo/vector-icons
 
 const BasicMenu = ({ navigation }) => {
@@ -9,15 +9,16 @@ const BasicMenu = ({ navigation }) => {
     };
 
     const recipes = [
-        { id: '1', name: 'Chicken Biryani' },
-        { id: '2', name: 'Paneer Butter Masala' },
-        { id: '3', name: 'Chole Bhature' },
-        { id: '4', name: 'Masala Dosa' },
-        { id: '5', name: 'Butter Chicken' },
+        { id: '1', name: 'Chicken Biryani'/*, image: require('./assets/chicken_biryani.jpg')*/ },
+        { id: '2', name: 'Paneer Butter Masala'/*, image: require('./assets/paneer_butter_masala.jpg')*/ },
+        { id: '3', name: 'Chole Bhature'/*, image: require('./assets/chole_bhature.jpg')*/ },
+        { id: '4', name: 'Masala Dosa'/*, image: require('./assets/masala_dosa.jpg')*/ },
+        { id: '5', name: 'Butter Chicken'/*, image: require('./assets/butter_chicken.jpg')*/ },
     ];
 
     const renderRecipe = ({ item }) => (
         <View style={styles.recipeItem}>
+            <Image source={item.image} style={styles.recipeImage} />
             <Text style={styles.recipeText}>{item.name}</Text>
         </View>
     );
@@ -87,6 +88,12 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         width: '90%',
         alignItems: 'center',
+    },
+    recipeImage: {
+        width: 200,
+        height: 150,
+        borderRadius: 10,
+        marginBottom: 10,
     },
     recipeText: {
         fontSize: 16,
