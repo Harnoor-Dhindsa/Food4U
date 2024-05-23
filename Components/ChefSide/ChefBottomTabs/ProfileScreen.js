@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, Button } from "react-native";
-import { FIREBASE_AUTH } from "../../_utils/FirebaseConfig";
+import { FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
 
 const ProfileScreen = ({ navigation }) => {
   const [logoutError, setLogoutError] = useState(null);

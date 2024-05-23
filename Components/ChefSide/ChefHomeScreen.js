@@ -1,9 +1,9 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "react-native-vector-icons/Ionicons"; // Import Ionicons from react-native-vector-icons
-import ChefMainPage from "./ChefMainPage";
-import OrdersScreen from "./OrdersScreen";
-import ProfileScreen from "./ProfileScreen";
+import ChefMainPage from "./ChefBottomTabs/ChefMainPage";
+import OrdersScreen from "./ChefBottomTabs/OrdersScreen";
+import ProfileScreen from "./ChefBottomTabs/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 
