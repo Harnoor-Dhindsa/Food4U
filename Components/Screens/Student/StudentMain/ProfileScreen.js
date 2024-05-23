@@ -1,30 +1,294 @@
-import React, { useState } from 'react';
-import { View, Text, Button} from 'react-native';
-import { FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 
-const ProfileScreen = ({navigation}) => {
-  const [logoutError, setLogoutError] = useState(null);
+const ProfileScreen = ({ navigation }) => {
+  const [editMode, setEditMode] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [gender, setGender] = useState('');
+  const [age, setAge] = useState('');
+  const [location, setLocation] = useState('');
+  const [profilePic, setProfilePic] = useState(null);
 
-  const LogOut = () => {
+  const user = FIREBASE_AUTH.currentUser;
+
+  useEffect(() => {
+    if (user) {
+      loadUserProfile();
+      setEmail(user.email); // Set email to the user's email from Firebase Authentication
+    }
+  }, [user]);
+
+  const loadUserProfile = async () => {
+    const docRef = doc(FIREBASE_DB, 'StudentsProfiles', user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const profileData = docSnap.data();
+      setFirstName(profileData.firstName);
+      setLastName(profileData.lastName);
+      setPhoneNumber(profileData.phoneNumber)
+      setGender(profileData.gender);
+      setAge(profileData.age);
+      setLocation(profileData.location);
+      if (profileData.profilePic) {
+        setProfilePic(profileData.profilePic);
+      }
+    } else {
+      console.log('No such document!');
+    }
+  };
+
+  const handleEditProfile = () => {
+    setEditMode(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (user) {
+      await setDoc(doc(FIREBASE_DB, 'StudentsProfiles', user.uid), {
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        gender,
+        age,
+        location,
+        profilePic,
+      });
+      setEditMode(false);
+    }
+  };
+
+  const handleLogOut = () => {
     FIREBASE_AUTH.signOut()
       .then(() => {
         navigation.replace('Screen');
       })
       .catch(error => {
-        alert("Error in logging out")
+        alert("Error in logging out");
       });
   };
 
+  const handleChoosePhoto = async () => {
+    let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      alert('Permission to access camera roll is required!');
+      return;
+    }
+  
+    let _image = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0,
+    });
+  
+    if (!_image.cancelled) {
+      await setProfilePic(_image.assets[0].uri);
+      console.log('Profile pic updated:', _image.uri);
+    }
+  };
+
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Welcome to Profile!</Text>
-      <Button
-        onPress={LogOut}
-        title="LogOut"
-        color="#000"
-      />
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.profileContainer}>
+        <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
+        {editMode && (
+          <TouchableOpacity style={styles.choosePhotoButton} onPress={handleChoosePhoto}>
+            <Text style={styles.buttonText}>Choose Photo</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      <View style={styles.infoContainer}>
+        <View style={styles.row}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>First Name</Text>
+            <TextInput
+              style={[styles.input, !editMode && styles.nonEditableText]}
+              value={firstName}
+              editable={editMode}
+              onChangeText={setFirstName}
+              placeholder="First Name"
+              placeholderTextColor="#ccc"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Last Name</Text>
+            <TextInput
+              style={[styles.input, !editMode && styles.nonEditableText]}
+              value={lastName}
+              editable={editMode}
+              onChangeText={setLastName}
+              placeholder="Last Name"
+              placeholderTextColor="#ccc"
+            />
+          </View>
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={email}
+            editable={false} // Make email field non-editable
+            placeholder="Email"
+            placeholderTextColor="#ccc"
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={phoneNumber}
+            editable={editMode}
+            onChangeText={setPhoneNumber}
+            placeholder="Phone Number"
+            placeholderTextColor="#ccc"
+          />
+        </View>
+        <View style={styles.row}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Gender</Text>
+            <View style={[styles.input, styles.pickerContainer]}>
+              <Picker
+                selectedValue={gender}
+                onValueChange={(itemValue) => setGender(itemValue)}
+                enabled={editMode}
+                style={styles.picker}
+              >
+                <Picker.Item label="Male" value="Male" />
+                <Picker.Item label="Female" value="Female" />
+              </Picker>
+            </View>
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Age</Text>
+            <TextInput
+              style={[styles.input, !editMode && styles.nonEditableText]}
+              value={age}
+              editable={editMode}
+              onChangeText={setAge}
+              keyboardType="numeric"
+              placeholder="Age"
+              placeholderTextColor="#ccc"
+            />
+          </View>
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Location</Text>
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={location}
+            editable={editMode}
+            onChangeText={setLocation}
+            placeholder="Location"
+            placeholderTextColor="#ccc"
+          />
+        </View>
+      </View>
+      <View style={styles.buttonContainer}>
+        {editMode ? (
+          <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
+            <Text style={styles.buttonText}>Save Profile</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
+            <Text style={styles.buttonText}>Edit Profile</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={styles.button} onPress={handleLogOut}>
+          <Text style={styles.buttonText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    backgroundColor: '#EDF3EB',
+    padding: 20,
+    alignItems: 'center', // Center the contents
+  },
+  profileContainer: {
+    justifyContent: 'center', // Center horizontally
+    alignItems: 'center', // Center horizontally
+    marginBottom: 20,
+    marginTop: 50,
+  },
+  profilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  choosePhotoButton: {
+    marginTop: 10,
+    backgroundColor: '#FE660F',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  infoContainer: {
+    width: '100%', // Take full width
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  inputContainer: {
+    flex: 1,
+    marginBottom: 10,
+  },
+  label: {
+    color: 'black',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  input: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#FE660F',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    color: '#000', // Ensure text is black
+  },
+  nonEditableText: {
+    color: '#000', // Ensure text is black when not editable
+  },
+  pickerContainer: {
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+  },
+  buttonContainer: {
+    marginTop: 20,
+    width: '100%',
+  },
+  button: {
+    backgroundColor: '#FE660F',
+    paddingVertical: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});
 
 export default ProfileScreen;

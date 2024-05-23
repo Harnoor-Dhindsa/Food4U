@@ -59,6 +59,7 @@ const ProfileScreen = ({ navigation }) => {
         gender,
         age,
         location,
+        profilePic,
       });
       setEditMode(false);
     }
