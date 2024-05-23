@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
+import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../../_utils/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { launchImageLibrary } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -81,23 +81,31 @@ const ProfileScreen = ({ navigation }) => {
       alert('Permission to access camera roll is required!');
       return;
     }
-  
-    let _image = await ImagePicker.launchImageLibraryAsync({
+
+    let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0,
+      quality: 1,
     });
-  
-    if (!_image.cancelled) {
-      await setProfilePic(_image.assets[0].uri);
-      console.log('Profile pic updated:', _image.uri);
+
+    if (!result.canceled) {
+      const { uri } = result.assets[0];
+      const storageRef = ref(FIREBASE_STORAGE, `profilePics/${user.uid}`);
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      setProfilePic(downloadURL);
+      console.log('Profile pic updated:', downloadURL);
     }
   };
 
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={"#EDF3EB"} />
       <View style={styles.profileContainer}>
         <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
         {editMode && (
@@ -254,40 +262,38 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   input: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#FE660F',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: '#fff',
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
-    color: '#000', // Ensure text is black
-  },
-  nonEditableText: {
-    color: '#000', // Ensure text is black when not editable
+    paddingHorizontal: 10,
+    color: 'black',
   },
   pickerContainer: {
-    paddingVertical: 0,
-    paddingHorizontal: 0,
+    justifyContent: 'center',
   },
   picker: {
-    height: 50,
-    width: '100%',
+    height: 40,
+    color: 'black',
   },
   buttonContainer: {
-    marginTop: 20,
-    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%', // Take full width
   },
   button: {
     backgroundColor: '#FE660F',
-    paddingVertical: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
+    marginHorizontal: 5,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  nonEditableText: {
+    backgroundColor: '#f0f0f0',
   },
 });
 
