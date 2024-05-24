@@ -1,55 +1,54 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const [chefs, setChefs] = useState([]);
 
   useEffect(() => {
     const fetchChefs = async () => {
       const chefsCollection = collection(FIREBASE_DB, 'ChefsProfiles');
       const chefsSnapshot = await getDocs(chefsCollection);
-      const chefsList = chefsSnapshot.docs.map(doc => doc.data()).filter(chef => chef.firstName);
+      const chefsList = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(chef => chef.firstName);
       setChefs(chefsList);
     };
 
     fetchChefs();
   }, []);
 
+  const navigateToMenuList = (chefId) => {
+    navigation.navigate('MenuList', { chefId });
+  };
+
   const renderItem = ({ item }) => (
-    <View style={styles.chefContainer}>
-      <Image 
-        source={{ uri: item.profilePic }} 
-        style={styles.profilePic} 
-        onError={(e) => console.error(`Failed to load image: ${item.profilePic}`, e.nativeEvent.error)}
-      />
+    <TouchableOpacity style={styles.chefContainer} onPress={() => navigateToMenuList(item.id)}>
+      <Image source={{ uri: item.profilePic }} style={styles.profilePic} />
       <View style={styles.infoContainer}>
         <Text style={styles.name}>{item.firstName} {item.lastName}</Text>
         <Text style={styles.email}>{item.email}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
-      <StatusBar barStyle="dark-content" backgroundColor={"#EDF3EB"} />
+    <View style={styles.container}>
       <FlatList
         data={chefs}
         renderItem={renderItem}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.container}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.flatListContainer}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeContainer: {
+  container: {
     flex: 1,
     backgroundColor: '#EDF3EB',
   },
-  container: {
+  flatListContainer: {
     padding: 20,
   },
   chefContainer: {
