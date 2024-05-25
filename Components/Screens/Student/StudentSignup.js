@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView } from 'react-native';
-import { FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
 const StudentSignup = ({navigation}) => {
-  const [name, setName] = useState('');
+  const [FirstName, setFirstName] = useState('');
+  const [LastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,9 +17,18 @@ const StudentSignup = ({navigation}) => {
   const handleSignUp =  async () => {
     try{
       const response = await createUserWithEmailAndPassword(auth, email, password);
+      const user = response.user;
+      
+      // Save user details to Firestore
+      await setDoc(doc(FIREBASE_DB, 'StudentsProfiles', user.uid), {
+        firstName: FirstName,
+        lastName: LastName,
+        email: email
+      });
+
       console.log(response);
-      alert("Account created successfully!");
       navigation.replace('StudentHomeScreen');
+      alert("Go to Profile page to use the app!");
     } catch (error){
       console.log(error);
       alert("Error in creating account: " + error.message);
@@ -45,9 +56,18 @@ const StudentSignup = ({navigation}) => {
           <Ionicons name="person" size={24} color="black" style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
-            value={name}
-            onChangeText={setName}
+            placeholder="First Name"
+            value={FirstName}
+            onChangeText={setFirstName}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Ionicons name="person" size={24} color="black" style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Last Name"
+            value={LastName}
+            onChangeText={setLastName}
           />
         </View>
         <View style={styles.inputContainer}>
