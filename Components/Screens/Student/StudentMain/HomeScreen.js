@@ -1,20 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
 
 const HomeScreen = ({ navigation }) => {
   const [chefs, setChefs] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchChefs = async () => {
+    const chefsCollection = collection(FIREBASE_DB, 'ChefsProfiles');
+    const chefsSnapshot = await getDocs(chefsCollection);
+    const chefsList = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(chef => chef.firstName);
+    setChefs(chefsList);
+  };
 
   useEffect(() => {
-    const fetchChefs = async () => {
-      const chefsCollection = collection(FIREBASE_DB, 'ChefsProfiles');
-      const chefsSnapshot = await getDocs(chefsCollection);
-      const chefsList = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(chef => chef.firstName);
-      setChefs(chefsList);
-    };
-
     fetchChefs();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchChefs().then(() => setRefreshing(false));
   }, []);
 
   const navigateToMenuList = (chefId) => {
@@ -38,6 +44,7 @@ const HomeScreen = ({ navigation }) => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.flatListContainer}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
     </View>
   );
