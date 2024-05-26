@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../../_utils/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ProfileScreen = ({ navigation }) => {
@@ -33,7 +34,7 @@ const ProfileScreen = ({ navigation }) => {
       const profileData = docSnap.data();
       setFirstName(profileData.firstName);
       setLastName(profileData.lastName);
-      setPhoneNumber(profileData.phoneNumber)
+      setPhoneNumber(profileData.phoneNumber);
       setGender(profileData.gender);
       setAge(profileData.age);
       setLocation(profileData.location);
@@ -71,7 +72,7 @@ const ProfileScreen = ({ navigation }) => {
         navigation.replace('Screen');
       })
       .catch(error => {
-        alert("Error in logging out");
+        alert('Error in logging out');
       });
   };
 
@@ -102,6 +103,32 @@ const ProfileScreen = ({ navigation }) => {
       console.log('Profile pic updated:', downloadURL);
     }
   };
+
+  const fetchLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission to access location was denied');
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = location.coords;
+
+    let address = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude
+    });
+
+    if (address.length > 0) {
+      const addr = address[0];
+      const formattedAddress = `${addr.street}, ${addr.city}, ${addr.region}, ${addr.postalCode}, ${addr.country}`;
+      setLocation(formattedAddress);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocation();
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
