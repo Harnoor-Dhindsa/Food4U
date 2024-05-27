@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Button } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { collection, getDocs, where, query } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 
@@ -38,7 +38,9 @@ const HomeScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.container}
       />
-      <Button title="Add Menu" onPress={() => navigation.navigate('CreateMenu')} />
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('CreateMenu')}>
+        <Text style={styles.addButtonText}>Add Menu</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -67,6 +69,18 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 14,
     color: 'gray',
+  },
+  addButton: {
+    backgroundColor: '#FE660F', // Assuming the same green color
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    margin: 20,
+  },
+  addButtonText: {
+    fontSize: 16,
+    color: '#fff', // White color for the button text
+    fontWeight: 'bold',
   },
 });
 
