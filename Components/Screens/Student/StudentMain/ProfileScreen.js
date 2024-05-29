@@ -27,13 +27,13 @@ const ProfileScreen = ({ navigation }) => {
   }, [user]);
 
   const loadUserProfile = async () => {
-    const docRef = doc(FIREBASE_DB, 'StudentsProfiles', user.uid);
+    const docRef = doc(FIREBASE_DB, 'ChefsProfiles', user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const profileData = docSnap.data();
       setFirstName(profileData.firstName);
       setLastName(profileData.lastName);
-      setPhoneNumber(profileData.phoneNumber)
+      setPhoneNumber(profileData.phoneNumber);
       setGender(profileData.gender);
       setAge(profileData.age);
       setLocation(profileData.location);
@@ -51,7 +51,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     if (user) {
-      await setDoc(doc(FIREBASE_DB, 'StudentsProfiles', user.uid), {
+      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
         firstName,
         lastName,
         email,
@@ -105,7 +105,7 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={"#EDF3EB"} />
+      <StatusBar barStyle="dark-content" backgroundColor={"white"} />
       <View style={styles.profileContainer}>
         <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
         {editMode && (
@@ -200,19 +200,21 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
       </View>
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, editMode && styles.editModeButtonContainer]}>
         {editMode ? (
           <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
             <Text style={styles.buttonText}>Save Profile</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-            <Text style={styles.buttonText}>Edit Profile</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
+              <Text style={styles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleLogOut}>
+              <Text style={styles.buttonText}>Logout</Text>
+            </TouchableOpacity>
+          </>
         )}
-        <TouchableOpacity style={styles.button} onPress={handleLogOut}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -223,30 +225,30 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#EDF3EB',
     padding: 20,
-    alignItems: 'center', // Center the contents
+    alignItems: 'center',
   },
   profileContainer: {
-    justifyContent: 'center', // Center horizontally
-    alignItems: 'center', // Center horizontally
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
     marginTop: 50,
   },
   profilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     borderWidth: 3,
     borderColor: '#fff',
+    marginBottom: 10,
   },
   choosePhotoButton: {
-    marginTop: 10,
     backgroundColor: '#FE660F',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
   },
   infoContainer: {
-    width: '100%', // Take full width
+    width: '100%',
   },
   row: {
     flexDirection: 'row',
@@ -254,10 +256,11 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    marginBottom: 10,
+    marginBottom: 15,
+    paddingHorizontal: 5,
   },
   label: {
-    color: 'black',
+    color: '#333',
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -267,30 +270,41 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     paddingHorizontal: 10,
-    color: 'black',
+    color: '#333',
+    backgroundColor: '#fff',
   },
   pickerContainer: {
     justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    height: 40,
   },
   picker: {
     height: 40,
-    color: 'black',
+    color: '#333',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%', // Take full width
+    width: '100%',
+    marginTop: 20,
+  },
+  editModeButtonContainer: {
+    justifyContent: 'center', // Center the button
   },
   button: {
     backgroundColor: '#FE660F',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
     borderRadius: 5,
     marginHorizontal: 5,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   nonEditableText: {
     backgroundColor: '#f0f0f0',
