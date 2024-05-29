@@ -10,6 +10,12 @@ import ChefLogin from './Components/Screens/Chef/ChefLogin';
 import ChefSignup from './Components/Screens/Chef/ChefSignup';
 import StudentHomeScreen from './Components/Screens/Student/StudentHomeScreen';
 import ChefHomeScreen from './Components/Screens/Chef/ChefHomeScreen';
+import CreateMenu from './Components/Screens/Chef/CreateMenu';
+import ViewMenu from './Components/Screens/Chef/ViewMenu';
+import EditMenu from './Components/Screens/Chef/EditMenu';
+import MenuList from './Components/Screens/Student/MenuList';
+import MenuDetail from './Components/Screens/Student/MenuDetail';
+import ForgotPassword from './Components/Screens/ForgotPassword';
 
 const Stack = createStackNavigator();
 
@@ -25,6 +31,12 @@ export default function App() {
         <Stack.Screen name="ChefSignup" component={ChefSignup} options={{ headerShown: false}}/>
         <Stack.Screen name="StudentHomeScreen" component={StudentHomeScreen} options={{ headerShown: false}}/>
         <Stack.Screen name="ChefHomeScreen" component={ChefHomeScreen} options={{ headerShown: false}}/>
+        <Stack.Screen name="CreateMenu" component={CreateMenu} options={{ headerShown: false}}/>
+        <Stack.Screen name="ViewMenu" component={ViewMenu} options={{ headerShown: false}}/>
+        <Stack.Screen name="EditMenu" component={EditMenu} options={{ headerShown: false}}/>
+        <Stack.Screen name="MenuList" component={MenuList} options={{ headerShown: false}}/>
+        <Stack.Screen name="MenuDetail" component={MenuDetail} options={{ headerShown: false}}/>
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
