@@ -16,6 +16,7 @@ import EditMenu from './Components/Screens/Chef/EditMenu';
 import MenuList from './Components/Screens/Student/MenuList';
 import MenuDetail from './Components/Screens/Student/MenuDetail';
 import ForgotPassword from './Components/Screens/ForgotPassword';
+import SaveMenu from './Components/Screens/Chef/SaveMenu';
 
 const Stack = createStackNavigator();
 
@@ -37,6 +38,7 @@ export default function App() {
         <Stack.Screen name="MenuList" component={MenuList} options={{ headerShown: false}}/>
         <Stack.Screen name="MenuDetail" component={MenuDetail} options={{ headerShown: false}}/>
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false}}/>
+        <Stack.Screen name="SaveMenu" component={SaveMenu} options={{ headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

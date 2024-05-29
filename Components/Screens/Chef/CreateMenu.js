@@ -1,160 +1,125 @@
-// CreateMenu.js
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { collection, addDoc, doc, deleteDoc } from "firebase/firestore";
+import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
+import { FontAwesome } from "@expo/vector-icons";
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
-import * as ImagePicker from 'expo-image-picker';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
+const CreateMenu = ({ navigation }) => {
+  const [title, setTitle] = useState("");
+  const [items, setItems] = useState([]);
+  const [currentItem, setCurrentItem] = useState({ name: "", quantity: "" });
+  const [currentDessert, setCurrentDessert] = useState({
+    name: "",
+    quantity: "",
+  });
 
-const CreateMenu = ({ route, navigation }) => {
-  const { menu } = route.params || {};
-  const [heading, setHeading] = useState(menu?.heading || '');
-  const [items, setItems] = useState(menu?.items || []);
-  const [dessert, setDessert] = useState(menu?.dessert || '');
-  const [days, setDays] = useState(menu?.days || []);
-  const [dailyPrice, setDailyPrice] = useState(menu?.dailyPrice || '');
-  const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || '');
-  const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || '');
-  const [avatar, setAvatar] = useState(menu?.avatar || '');
-
-  useEffect(() => {
-    if (typeof days === 'string') {
-      setDays(days.split(', '));
+  const handleAddItem = async () => {
+    if (!currentItem.name || !currentItem.quantity) {
+      Alert.alert("Error", "Please enter both item name and quantity.");
+      return;
     }
-  }, [days]);
 
-  const handleAddItem = () => {
-    setItems([...items, { name: '', quantity: '', unit: '' }]);
-  };
-
-  const handleChoosePhoto = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      const { uri } = result.assets[0];
-      const storageRef = ref(FIREBASE_STORAGE, `menuAvatars/${new Date().getTime()}`);
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-
-      setAvatar(downloadURL);
-    }
-  };
-
-  const handleSaveMenu = async () => {
     const user = FIREBASE_AUTH.currentUser;
-    const menuData = {
-      heading,
-      items,
-      dessert,
-      days,
-      dailyPrice,
-      weeklyPrice,
-      monthlyPrice,
-      avatar,
-      chefId: user.uid,
-    };
+    const newItem = { ...currentItem, chefId: user.uid };
 
     try {
-      if (menu) {
-        // Update existing menu
-        const menuDocRef = doc(FIREBASE_DB, 'Menus', menu.id);
-        await updateDoc(menuDocRef, menuData);
-      } else {
-        // Create new menu
-        await addDoc(collection(FIREBASE_DB, 'Menus'), menuData);
-      }
-      navigation.goBack();
+      const docRef = await addDoc(
+        collection(FIREBASE_DB, "MenuItems"),
+        newItem
+      );
+      setItems([...items, { ...newItem, id: docRef.id }]);
+      setCurrentItem({ name: "", quantity: "" });
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert("Error", error.message);
     }
   };
 
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...items];
-    newItems[index][field] = value;
-    setItems(newItems);
+  const handleDeleteItem = async (id) => {
+    try {
+      await deleteDoc(doc(FIREBASE_DB, "MenuItems", id));
+      setItems(items.filter((item) => item.id !== id));
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  const handleNext = () => {
+    navigation.navigate("SaveMenu", { title, items, dessert: currentDessert });
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.heading}>Create Menu</Text>
       <TextInput
-        placeholder="Menu Heading"
-        value={heading}
-        onChangeText={setHeading}
+        placeholder="Menu Title"
+        value={title}
+        onChangeText={setTitle}
         style={styles.input}
       />
+      <Text style={styles.label}>Add Item</Text>
+      <View style={styles.itemRow}>
+        <TextInput
+          placeholder="Item Name"
+          value={currentItem.name}
+          onChangeText={(name) => setCurrentItem({ ...currentItem, name })}
+          style={[styles.input, styles.itemInput]}
+        />
+        <TextInput
+          placeholder="Quantity"
+          value={currentItem.quantity}
+          onChangeText={(quantity) =>
+            setCurrentItem({ ...currentItem, quantity })
+          }
+          style={[styles.input, styles.quantityInput]}
+        />
+      </View>
+      <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
+        <Text style={styles.addButtonText}>Add Item</Text>
+      </TouchableOpacity>
       <FlatList
         data={items}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <View style={styles.itemContainer}>
-            <TextInput
-              placeholder="Item Name"
-              value={item.name}
-              onChangeText={(text) => handleItemChange(index, 'name', text)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Quantity"
-              value={item.quantity}
-              onChangeText={(text) => handleItemChange(index, 'quantity', text)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Unit"
-              value={item.unit}
-              onChangeText={(text) => handleItemChange(index, 'unit', text)}
-              style={styles.input}
-            />
+            <Text>
+              {item.name} - {item.quantity}
+            </Text>
+            <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
+              <FontAwesome name="trash" size={24} color="red" />
+            </TouchableOpacity>
           </View>
         )}
-        keyExtractor={(item, index) => index.toString()}
-        ListHeaderComponent={<Button title="Add Item" onPress={handleAddItem} />}
+        keyExtractor={(item) => item.id}
       />
-      <TextInput
-        placeholder="Dessert"
-        value={dessert}
-        onChangeText={setDessert}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Available Days (e.g., Monday, Tuesday)"
-        value={days.join(', ')}
-        onChangeText={(text) => setDays(text.split(', '))}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Daily Price"
-        value={dailyPrice}
-        onChangeText={setDailyPrice}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Weekly Price"
-        value={weeklyPrice}
-        onChangeText={setWeeklyPrice}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Monthly Price"
-        value={monthlyPrice}
-        onChangeText={setMonthlyPrice}
-        style={styles.input}
-      />
-      <TouchableOpacity onPress={handleChoosePhoto}>
-        <Text>Choose Photo</Text>
+      <Text style={styles.label}>Add Dessert (Optional)</Text>
+      <View style={styles.itemRow}>
+        <TextInput
+          placeholder="Dessert Name"
+          value={currentDessert.name}
+          onChangeText={(name) =>
+            setCurrentDessert({ ...currentDessert, name })
+          }
+          style={[styles.input, styles.itemInput]}
+        />
+        <TextInput
+          placeholder="Quantity"
+          value={currentDessert.quantity}
+          onChangeText={(quantity) =>
+            setCurrentDessert({ ...currentDessert, quantity })
+          }
+          style={[styles.input, styles.quantityInput]}
+        />
+      </View>
+      <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+        <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
-      {avatar ? <Image source={{ uri: avatar }} style={styles.image} /> : null}
-      <Button title="Save Menu" onPress={handleSaveMenu} />
     </View>
   );
 };
@@ -163,25 +128,71 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: "#EDF3EB",
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#FE660F",
+    textAlign: "center",
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
+    height: 50,
+    borderColor: "#ccc",
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginVertical: 5,
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    marginVertical: 10,
+    backgroundColor: "white",
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginVertical: 10,
+    color: "#333",
+  },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  itemInput: {
+    flex: 2,
+    marginRight: 10,
+  },
+  quantityInput: {
+    flex: 1,
+  },
+  addButton: {
+    backgroundColor: "#FE660F",
+    borderRadius: 20,
+    padding: 10,
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  addButtonText: {
+    color: "black",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginVertical: 5,
   },
-  image: {
-    width: 100,
-    height: 100,
-    marginVertical: 10,
+  nextButton: {
+    backgroundColor: "#FE660F",
+    borderRadius: 20,
+    padding: 15,
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  nextButtonText: {
+    color: "black",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 });
 
