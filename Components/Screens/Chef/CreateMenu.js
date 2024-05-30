@@ -87,6 +87,7 @@ const CreateMenu = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.header}>Create a New Menu</Text>
       <TextInput
         placeholder="Menu Heading"
         value={heading}
@@ -118,7 +119,11 @@ const CreateMenu = ({ route, navigation }) => {
           </View>
         )}
         keyExtractor={(item, index) => index.toString()}
-        ListHeaderComponent={<Button title="Add Item" onPress={handleAddItem} />}
+        ListHeaderComponent={
+          <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
+            <Text style={styles.addButtonText}>Add Item</Text>
+          </TouchableOpacity>
+        }
       />
       <TextInput
         placeholder="Dessert"
@@ -150,11 +155,13 @@ const CreateMenu = ({ route, navigation }) => {
         onChangeText={setMonthlyPrice}
         style={styles.input}
       />
-      <TouchableOpacity onPress={handleChoosePhoto}>
-        <Text>Choose Photo</Text>
+      <TouchableOpacity style={styles.photoButton} onPress={handleChoosePhoto}>
+        <Text style={styles.photoButtonText}>Choose Photo</Text>
       </TouchableOpacity>
       {avatar ? <Image source={{ uri: avatar }} style={styles.image} /> : null}
-      <Button title="Save Menu" onPress={handleSaveMenu} />
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
+        <Text style={styles.saveButtonText}>Save Menu</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -163,6 +170,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: 'white',
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FE660F',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   input: {
     height: 40,
@@ -178,9 +193,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 5,
   },
+  addButton: {
+    backgroundColor: '#FE660F',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  photoButton: {
+    backgroundColor: '#FE660F',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  photoButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   image: {
     width: 100,
     height: 100,
+    borderRadius: 5,
     marginVertical: 10,
   },
 });

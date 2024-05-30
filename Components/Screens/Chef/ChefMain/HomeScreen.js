@@ -32,13 +32,18 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeContainer}>
       <StatusBar barStyle="dark-content" backgroundColor={"white"} />
+      <View style={styles.header}>
+        <Text style={styles.welcomeMessage}>Let's start cooking!</Text>
+      </View>
       <FlatList
         data={menus}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.container}
       />
-      <Button title="Add Menu" onPress={() => navigation.navigate('CreateMenu')} />
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('CreateMenu')}>
+        <Text style={styles.addButtonText}>Add Menu</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -47,6 +52,18 @@ const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  header: {
+    padding: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 3,
+    borderBottomColor: '#FE660F',
+    alignItems: 'center',
+  },
+  welcomeMessage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FE660F',
   },
   container: {
     padding: 20,
@@ -67,6 +84,18 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 14,
     color: 'gray',
+  },
+  addButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    margin: 20,
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
