@@ -33,7 +33,7 @@ const ProfileScreen = ({ navigation }) => {
       const profileData = docSnap.data();
       setFirstName(profileData.firstName);
       setLastName(profileData.lastName);
-      setPhoneNumber(profileData.phoneNumber)
+      setPhoneNumber(profileData.phoneNumber);
       setGender(profileData.gender);
       setAge(profileData.age);
       setLocation(profileData.location);
@@ -223,18 +223,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#EDF3EB',
     padding: 20,
-    alignItems: 'center', // Center the contents
+    alignItems: 'center',
   },
   profileContainer: {
-    justifyContent: 'center', // Center horizontally
-    alignItems: 'center', // Center horizontally
-    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
     marginTop: 50,
   },
   profilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     borderWidth: 3,
     borderColor: '#fff',
   },
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   infoContainer: {
-    width: '100%', // Take full width
+    width: '100%',
   },
   row: {
     flexDirection: 'row',
@@ -254,10 +254,10 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   label: {
-    color: 'black',
+    color: '#333',
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -267,19 +267,21 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     paddingHorizontal: 10,
-    color: 'black',
+    color: '#333',
+    backgroundColor: '#fff',
   },
   pickerContainer: {
     justifyContent: 'center',
   },
   picker: {
     height: 40,
-    color: 'black',
+    color: '#333',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%', // Take full width
+    width: '100%',
+    marginTop: 30,
   },
   button: {
     backgroundColor: '#FE660F',

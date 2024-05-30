@@ -1,4 +1,3 @@
-// CreateMenu.js
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
@@ -17,7 +16,7 @@ const CreateMenu = ({ route, navigation }) => {
   const [dailyPrice, setDailyPrice] = useState(menu?.dailyPrice || '');
   const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || '');
   const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || '');
-  const [avatar, setAvatar] = useState(menu?.avatar || '');
+  const [avatars, setAvatars] = useState(menu?.avatars || []);
 
   useEffect(() => {
     if (typeof days === 'string') {
@@ -29,24 +28,32 @@ const CreateMenu = ({ route, navigation }) => {
     setItems([...items, { name: '', quantity: '', unit: '' }]);
   };
 
-  const handleChoosePhoto = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const handleChoosePhotos = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      const { uri } = result.assets[0];
-      const storageRef = ref(FIREBASE_STORAGE, `menuAvatars/${new Date().getTime()}`);
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      if (!result.canceled) {
+        const newAvatars = await Promise.all(result.assets.map(async (asset) => {
+          const { uri } = asset;
+          const storageRef = ref(FIREBASE_STORAGE, `menuAvatars/${new Date().getTime()}`);
+          const response = await fetch(uri);
+          const blob = await response.blob();
 
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
+          await uploadBytes(storageRef, blob);
+          const downloadURL = await getDownloadURL(storageRef);
 
-      setAvatar(downloadURL);
+          return downloadURL;
+        }));
+        setAvatars([...avatars, ...newAvatars]);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to select photos. Please try again.');
     }
   };
 
@@ -60,7 +67,7 @@ const CreateMenu = ({ route, navigation }) => {
       dailyPrice,
       weeklyPrice,
       monthlyPrice,
-      avatar,
+      avatars,
       chefId: user.uid,
     };
 
@@ -85,41 +92,41 @@ const CreateMenu = ({ route, navigation }) => {
     setItems(newItems);
   };
 
-  return (
-    <View style={styles.container}>
+  const renderItem = ({ item, index }) => (
+    <View style={styles.itemContainer}>
+      <TextInput
+        placeholder="Item Name"
+        value={item.name}
+        onChangeText={(text) => handleItemChange(index, 'name', text)}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Quantity"
+        value={item.quantity}
+        onChangeText={(text) => handleItemChange(index, 'quantity', text)}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Unit"
+        value={item.unit}
+        onChangeText={(text) => handleItemChange(index, 'unit', text)}
+        style={styles.input}
+      />
+    </View>
+  );
+
+  const renderHeader = () => (
+    <View>
+      <Text style={styles.heading}>Create Menu</Text>
       <TextInput
         placeholder="Menu Heading"
         value={heading}
         onChangeText={setHeading}
         style={styles.input}
       />
-      <FlatList
-        data={items}
-        renderItem={({ item, index }) => (
-          <View style={styles.itemContainer}>
-            <TextInput
-              placeholder="Item Name"
-              value={item.name}
-              onChangeText={(text) => handleItemChange(index, 'name', text)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Quantity"
-              value={item.quantity}
-              onChangeText={(text) => handleItemChange(index, 'quantity', text)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Unit"
-              value={item.unit}
-              onChangeText={(text) => handleItemChange(index, 'unit', text)}
-              style={styles.input}
-            />
-          </View>
-        )}
-        keyExtractor={(item, index) => index.toString()}
-        ListHeaderComponent={<Button title="Add Item" onPress={handleAddItem} />}
-      />
+      <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
+        <Text style={styles.addButtonText}>Add Item</Text>
+      </TouchableOpacity>
       <TextInput
         placeholder="Dessert"
         value={dessert}
@@ -129,7 +136,7 @@ const CreateMenu = ({ route, navigation }) => {
       <TextInput
         placeholder="Available Days (e.g., Monday, Tuesday)"
         value={days.join(', ')}
-        onChangeText={(text) => setDays(text.split(', '))}
+        onChangeText={(text) => setDays(text.split(', ').map(day => day.trim()))}
         style={styles.input}
       />
       <TextInput
@@ -150,38 +157,88 @@ const CreateMenu = ({ route, navigation }) => {
         onChangeText={setMonthlyPrice}
         style={styles.input}
       />
-      <TouchableOpacity onPress={handleChoosePhoto}>
-        <Text>Choose Photo</Text>
+      <TouchableOpacity style={styles.photoButton} onPress={handleChoosePhotos}>
+        <Text style={styles.photoButtonText}>Choose Photos</Text>
       </TouchableOpacity>
-      {avatar ? <Image source={{ uri: avatar }} style={styles.image} /> : null}
-      <Button title="Save Menu" onPress={handleSaveMenu} />
+      <View style={styles.imageContainer}>
+        {avatars.map((avatar, index) => (
+          <Image key={index} source={{ uri: avatar }} style={styles.image} />
+        ))}
+      </View>
     </View>
+  );
+
+  return (
+    <FlatList
+      contentContainerStyle={styles.container}
+      data={items}
+      renderItem={renderItem}
+      keyExtractor={(item, index) => index.toString()}
+      ListHeaderComponent={renderHeader}
+      ListFooterComponent={<Button title="Save Menu" onPress={handleSaveMenu} color="#FE660F" />}
+    />
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
+    backgroundColor: '#f8f8f8',
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   input: {
     height: 40,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    marginVertical: 5,
+    marginVertical: 10,
+    backgroundColor: '#fff',
   },
   itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  addButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    marginVertical: 5,
+    marginVertical: 10,
+  },
+  addButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  photoButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  photoButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  imageContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginVertical: 10,
   },
   image: {
     width: 100,
     height: 100,
-    marginVertical: 10,
+    borderRadius: 10,
+    margin: 5,
   },
 });
 

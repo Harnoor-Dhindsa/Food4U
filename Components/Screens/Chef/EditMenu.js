@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, Image, StyleSheet, Alert, ScrollView } from 'react-native';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
@@ -71,7 +71,8 @@ const EditMenu = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>Edit Menu</Text>
       <TextInput
         placeholder="Menu Heading"
         value={heading}
@@ -103,7 +104,11 @@ const EditMenu = ({ route, navigation }) => {
           </View>
         )}
         keyExtractor={(item, index) => index.toString()}
-        ListHeaderComponent={<Button title="Add Item" onPress={handleAddItem} />}
+        ListHeaderComponent={
+          <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
+            <Text style={styles.addButtonText}>ADD ITEM</Text>
+          </TouchableOpacity>
+        }
       />
       <TextInput
         placeholder="Dessert"
@@ -135,38 +140,73 @@ const EditMenu = ({ route, navigation }) => {
         onChangeText={setMonthlyPrice}
         style={styles.input}
       />
-      <TouchableOpacity onPress={handleChoosePhoto}>
-        <Text>Choose Photo</Text>
+      <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoButton}>
+        <Text style={styles.photoButtonText}>Choose Photo</Text>
       </TouchableOpacity>
       {avatar ? <Image source={{ uri: avatar }} style={styles.image} /> : null}
-      <Button title="Save Menu" onPress={handleSaveMenu} />
-    </View>
+      <Button title="Save Menu" onPress={handleSaveMenu} color="#FE660F" />
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
+    backgroundColor: '#f8f8f8', // Light background color
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   input: {
     height: 40,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    marginVertical: 5,
+    marginVertical: 10,
+    backgroundColor: '#fff',
   },
   itemContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 5,
+    marginVertical: 10,
+  },
+  addButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  addButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  photoButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  photoButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   image: {
     width: 100,
     height: 100,
+    borderRadius: 10,
     marginVertical: 10,
+    alignSelf: 'center',
   },
 });
 
