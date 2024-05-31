@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../../_utils/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Ionicons } from '@expo/vector-icons';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -65,14 +66,35 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    loadUserProfile(); // Revert changes by reloading profile data
+  };
+
   const handleLogOut = () => {
-    FIREBASE_AUTH.signOut()
-      .then(() => {
-        navigation.replace('Screen');
-      })
-      .catch(error => {
-        alert("Error in logging out");
-      });
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          onPress: () => {
+            FIREBASE_AUTH.signOut()
+              .then(() => {
+                navigation.replace('Screen');
+              })
+              .catch(error => {
+                alert("Error in logging out");
+              });
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleChoosePhoto = async () => {
@@ -107,7 +129,13 @@ const ProfileScreen = ({ navigation }) => {
     <ScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={"white"} />
       <View style={styles.profileContainer}>
-        <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
+        {profilePic ? (
+          <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
+        ) : (
+          <View style={styles.profilePhotoPlaceholder}>
+            <Ionicons name="person" size={50} color="#ccc" />
+          </View>
+        )}
         {editMode && (
           <TouchableOpacity style={styles.choosePhotoButton} onPress={handleChoosePhoto}>
             <Text style={styles.buttonText}>Choose Photo</Text>
@@ -142,7 +170,7 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
+            style={[styles.input, styles.nonEditableText]}
             value={email}
             editable={false} // Make email field non-editable
             placeholder="Email"
@@ -158,6 +186,7 @@ const ProfileScreen = ({ navigation }) => {
             onChangeText={setPhoneNumber}
             placeholder="Phone Number"
             placeholderTextColor="#ccc"
+            keyboardType="phone-pad"
           />
         </View>
         <View style={styles.row}>
@@ -202,17 +231,24 @@ const ProfileScreen = ({ navigation }) => {
       </View>
       <View style={styles.buttonContainer}>
         {editMode ? (
-          <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-            <Text style={styles.buttonText}>Save Profile</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
+              <Text style={styles.buttonText}>Save Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleCancelEdit}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+          </>
         ) : (
-          <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-            <Text style={styles.buttonText}>Edit Profile</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
+              <Text style={styles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleLogOut}>
+              <Text style={styles.buttonText}>Logout</Text>
+            </TouchableOpacity>
+          </>
         )}
-        <TouchableOpacity style={styles.button} onPress={handleLogOut}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -236,7 +272,17 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: '#FE660F', // Updated border color
+  },
+  profilePhotoPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#FE660F', // Updated border color
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   choosePhotoButton: {
     marginTop: 10,
@@ -255,6 +301,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flex: 1,
     marginBottom: 10,
+    marginHorizontal: 5, // Add some horizontal margin
   },
   label: {
     color: 'black',
@@ -268,6 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 10,
     color: 'black',
+    backgroundColor: '#fff', // Add background color
   },
   pickerContainer: {
     justifyContent: 'center',
@@ -280,6 +328,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%', // Take full width
+    marginTop: 20, // Add some top margin
   },
   button: {
     backgroundColor: '#FE660F',
