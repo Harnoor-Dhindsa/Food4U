@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../../_utils/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -8,21 +8,24 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [gender, setGender] = useState('');
-  const [age, setAge] = useState('');
-  const [location, setLocation] = useState('');
-  const [profilePic, setProfilePic] = useState(null);
+  const [profile, setProfile] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    gender: '',
+    age: '',
+    location: '',
+    profilePic: null,
+  });
+  const [originalProfile, setOriginalProfile] = useState({});
 
   const user = FIREBASE_AUTH.currentUser;
 
   useEffect(() => {
     if (user) {
       loadUserProfile();
-      setEmail(user.email); // Set email to the user's email from Firebase Authentication
+      setProfile(prevState => ({ ...prevState, email: user.email })); // Set email to the user's email from Firebase Authentication
     }
   }, [user]);
 
@@ -31,15 +34,8 @@ const ProfileScreen = ({ navigation }) => {
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const profileData = docSnap.data();
-      setFirstName(profileData.firstName);
-      setLastName(profileData.lastName);
-      setPhoneNumber(profileData.phoneNumber);
-      setGender(profileData.gender);
-      setAge(profileData.age);
-      setLocation(profileData.location);
-      if (profileData.profilePic) {
-        setProfilePic(profileData.profilePic);
-      }
+      setProfile(profileData);
+      setOriginalProfile(profileData); // Store original profile data
     } else {
       console.log('No such document!');
     }
@@ -51,28 +47,42 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     if (user) {
-      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        gender,
-        age,
-        location,
-        profilePic,
-      });
+      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), profile);
       setEditMode(false);
+      setOriginalProfile(profile); // Update original profile data
     }
   };
 
+  const handleCancelEdit = () => {
+    setProfile(originalProfile); // Reset state to original profile data
+    setEditMode(false);
+  };
+
   const handleLogOut = () => {
-    FIREBASE_AUTH.signOut()
-      .then(() => {
-        navigation.replace('Screen');
-      })
-      .catch(error => {
-        alert("Error in logging out");
-      });
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Log out canceled"),
+          style: "cancel"
+        },
+        {
+          text: "OK",
+          onPress: () => {
+            FIREBASE_AUTH.signOut()
+              .then(() => {
+                navigation.replace('Screen');
+              })
+              .catch(error => {
+                alert("Error in logging out");
+              });
+          }
+        }
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleChoosePhoto = async () => {
@@ -98,7 +108,7 @@ const ProfileScreen = ({ navigation }) => {
       await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(storageRef);
 
-      setProfilePic(downloadURL);
+      setProfile(prevState => ({ ...prevState, profilePic: downloadURL }));
       console.log('Profile pic updated:', downloadURL);
     }
   };
@@ -107,7 +117,7 @@ const ProfileScreen = ({ navigation }) => {
     <ScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={"white"} />
       <View style={styles.profileContainer}>
-        <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
+        <Image key={profile.profilePic} source={{ uri: profile.profilePic }} style={styles.profilePhoto} />
         {editMode && (
           <TouchableOpacity style={styles.choosePhotoButton} onPress={handleChoosePhoto}>
             <Text style={styles.buttonText}>Choose Photo</Text>
@@ -120,9 +130,9 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.label}>First Name</Text>
             <TextInput
               style={[styles.input, !editMode && styles.nonEditableText]}
-              value={firstName}
+              value={profile.firstName}
               editable={editMode}
-              onChangeText={setFirstName}
+              onChangeText={text => setProfile(prevState => ({ ...prevState, firstName: text }))}
               placeholder="First Name"
               placeholderTextColor="#ccc"
             />
@@ -131,9 +141,9 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.label}>Last Name</Text>
             <TextInput
               style={[styles.input, !editMode && styles.nonEditableText]}
-              value={lastName}
+              value={profile.lastName}
               editable={editMode}
-              onChangeText={setLastName}
+              onChangeText={text => setProfile(prevState => ({ ...prevState, lastName: text }))}
               placeholder="Last Name"
               placeholderTextColor="#ccc"
             />
@@ -143,7 +153,7 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
-            value={email}
+            value={profile.email}
             editable={false} // Make email field non-editable
             placeholder="Email"
             placeholderTextColor="#ccc"
@@ -153,9 +163,9 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.label}>Phone Number</Text>
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
-            value={phoneNumber}
+            value={profile.phoneNumber}
             editable={editMode}
-            onChangeText={setPhoneNumber}
+            onChangeText={text => setProfile(prevState => ({ ...prevState, phoneNumber: text }))}
             placeholder="Phone Number"
             placeholderTextColor="#ccc"
           />
@@ -165,8 +175,8 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.label}>Gender</Text>
             <View style={[styles.input, styles.pickerContainer]}>
               <Picker
-                selectedValue={gender}
-                onValueChange={(itemValue) => setGender(itemValue)}
+                selectedValue={profile.gender}
+                onValueChange={(itemValue) => setProfile(prevState => ({ ...prevState, gender: itemValue }))}
                 enabled={editMode}
                 style={styles.picker}
               >
@@ -179,9 +189,9 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.label}>Age</Text>
             <TextInput
               style={[styles.input, !editMode && styles.nonEditableText]}
-              value={age}
+              value={profile.age}
               editable={editMode}
-              onChangeText={setAge}
+              onChangeText={text => setProfile(prevState => ({ ...prevState, age: text }))}
               keyboardType="numeric"
               placeholder="Age"
               placeholderTextColor="#ccc"
@@ -192,19 +202,24 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.label}>Location</Text>
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
-            value={location}
+            value={profile.location}
             editable={editMode}
-            onChangeText={setLocation}
+            onChangeText={text => setProfile(prevState => ({ ...prevState, location: text }))}
             placeholder="Location"
             placeholderTextColor="#ccc"
           />
         </View>
       </View>
-      <View style={[styles.buttonContainer, editMode && styles.editModeButtonContainer]}>
+      <View style={styles.buttonContainer}>
         {editMode ? (
-          <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-            <Text style={styles.buttonText}>Save Profile</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
+              <Text style={styles.buttonText}>Save Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleCancelEdit}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+          </>
         ) : (
           <>
             <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
@@ -287,12 +302,9 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: '100%',
     marginTop: 20,
-  },
-  editModeButtonContainer: {
-    justifyContent: 'center', // Center the button
   },
   button: {
     backgroundColor: '#FE660F',
@@ -312,3 +324,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
+
