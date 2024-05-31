@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Button, SectionList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Button, SectionList, Platform, SafeAreaView } from 'react-native';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
@@ -218,27 +218,44 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: '',
       data: [
-        <Button title="Save Menu" onPress={handleSaveMenu} />,
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
+          <Text style={styles.saveButtonText}>Save Menu</Text>
+        </TouchableOpacity>,
       ],
     },
   ];
 
   return (
-    <SectionList
-      sections={sections}
-      keyExtractor={(item, index) => index.toString()}
-      renderItem={({ item, section, index }) => section.renderItem ? section.renderItem({ item, index }) : item}
-      renderSectionHeader={({ section: { title } }) => (
-        title ? <Text style={styles.label}>{title}</Text> : null
-      )}
-      contentContainerStyle={styles.container}
-    />
+    <SafeAreaView style={styles.safeArea}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item, section, index }) => section.renderItem ? section.renderItem({ item, index }) : item}
+        renderSectionHeader={({ section: { title } }) => (
+          title ? <Text style={styles.label}>{title}</Text> : null
+        )}
+        contentContainerStyle={styles.container}
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#EDF3EB',
+    ...Platform.select({
+      ios: {
+        paddingTop: 0,
+      },
+      android: {
+        paddingTop: 0, // Remove unnecessary padding for Android
+      },
+    }),
+  },
   container: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     backgroundColor: '#EDF3EB',
   },
   label: {
@@ -294,12 +311,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingVertical: 10,
   },
   image: {
     width: 100,
     height: 100,
     borderRadius: 5,
     margin: 5,
+  },
+  saveButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

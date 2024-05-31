@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, Image, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const ViewMenu = ({ route, navigation }) => {
@@ -22,6 +22,10 @@ const ViewMenu = ({ route, navigation }) => {
 
   const ListHeaderComponent = () => (
     <>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Icon name="arrow-back" size={24} color="black" />
+        <Text style={styles.backButtonText}>Menus</Text>
+      </TouchableOpacity>
       <Text style={styles.heading}>{menu.heading}</Text>
       <Text style={styles.subheading}>Items</Text>
     </>
@@ -90,26 +94,36 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#EDF3EB',
+    ...Platform.select({
+      ios: {
+        paddingTop: 50, // Ensure padding is correct for iOS devices
+      },
+      android: {
+        paddingTop: 0, // Ensure padding is correct for Android devices
+      },
+    }),
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButtonText: {
+    marginLeft: 5,
+    fontSize: 16,
+    color: 'black',
   },
   heading: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333',
+    color: 'black',
     textAlign: 'center',
   },
   subheading: {
     fontSize: 18,
     marginVertical: 10,
-    color: '#555',
-    fontWeight: 'bold',
-  },
-  text: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 10,
-  },
-  boldText: {
+    color: 'black',
     fontWeight: 'bold',
   },
   itemContainer: {
@@ -117,18 +131,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: 5,
     padding: 10,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f78b4d',
     borderRadius: 5,
   },
   itemText: {
-    color: '#333',
-  },
-  listContainer: {
-    paddingBottom: 20,
+    color: 'black',
   },
   priceTable: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: 'black',
     borderRadius: 5,
     overflow: 'hidden',
     marginBottom: 20,
@@ -138,11 +149,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: 'black',
   },
   priceLabel: {
     fontWeight: 'bold',
-    color: '#333',
+    color: 'black',
   },
   priceValue: {
     color: '#333',
@@ -153,14 +164,14 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   dayItem: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f78b4d',
     padding: 10,
     borderRadius: 5,
     marginRight: 5,
     marginBottom: 5,
   },
   dayText: {
-    color: '#333',
+    color: 'black',
   },
   imageContainer: {
     flexDirection: 'row',
