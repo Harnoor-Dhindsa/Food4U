@@ -1,40 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Button, SectionList } from 'react-native';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
-import * as ImagePicker from 'expo-image-picker';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Animated,
+  ScrollView,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
 
-const CreateMenu = ({ route, navigation }) => {
-  const { menu } = route.params || {};
-  const [heading, setHeading] = useState(menu?.heading || '');
-  const [items, setItems] = useState(menu?.items || []);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('');
-  const [dessert, setDessert] = useState(menu?.dessert || '');
-  const [dessertQuantity, setDessertQuantity] = useState('');
-  const [dessertDays, setDessertDays] = useState('');
-  const [days, setDays] = useState(menu?.days || []);
-  const [dailyPrice, setDailyPrice] = useState(menu?.dailyPrice || '');
-  const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || '');
-  const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || '');
-  const [avatars, setAvatars] = useState(menu?.avatars || []);
-
-  useEffect(() => {
-    if (typeof days === 'string') {
-      setDays(days.split(', '));
-    }
-  }, [days]);
+const CreateMenu = ({ navigation }) => {
+  const [heading, setHeading] = useState("");
+  const [items, setItems] = useState([]);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemQuantity, setNewItemQuantity] = useState("");
+  const [dessert, setDessert] = useState("");
+  const [dessertQuantity, setDessertQuantity] = useState("");
+  const [dessertDays, setDessertDays] = useState("");
+  const buttonAnim = new Animated.Value(1);
 
   const handleAddItem = () => {
     if (newItemName && newItemQuantity) {
-      setItems([{ name: newItemName, quantity: newItemQuantity }, ...items]);
-      setNewItemName('');
-      setNewItemQuantity('');
+      setItems([...items, { name: newItemName, quantity: newItemQuantity }]);
+      setNewItemName("");
+      setNewItemQuantity("");
     } else {
-      Alert.alert('Error', 'Please fill in both item name and quantity.');
+      Alert.alert("Error", "Please fill in both item name and quantity.");
     }
   };
 
@@ -42,264 +37,227 @@ const CreateMenu = ({ route, navigation }) => {
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const handleChoosePhoto = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      const uploadedAvatars = await Promise.all(
-        result.assets.map(async (asset) => {
-          const { uri } = asset;
-          const storageRef = ref(FIREBASE_STORAGE, `menuAvatars/${new Date().getTime()}-${Math.random()}`);
-          const response = await fetch(uri);
-          const blob = await response.blob();
-          await uploadBytes(storageRef, blob);
-          return await getDownloadURL(storageRef);
-        })
-      );
-      setAvatars([...avatars, ...uploadedAvatars]);
+  const handleNext = () => {
+    if (!heading) {
+      Alert.alert("Error", "Please provide a menu heading.");
+      return;
     }
-  };
 
-  const handleSaveMenu = async () => {
-    const user = FIREBASE_AUTH.currentUser;
+    if (items.length === 0) {
+      Alert.alert("Error", "Please add at least one item.");
+      return;
+    }
+
     const menuData = {
       heading,
       items,
       dessert,
       dessertQuantity,
-      dessertDays,
-      days,
-      dailyPrice,
-      weeklyPrice,
-      monthlyPrice,
-      avatars,
-      chefId: user.uid,
+      dessertDays: dessertDays.split(", "),
+      chefId: FIREBASE_AUTH.currentUser.uid,
     };
 
-    try {
-      if (menu) {
-        const menuDocRef = doc(FIREBASE_DB, 'Menus', menu.id);
-        await updateDoc(menuDocRef, menuData);
-      } else {
-        await addDoc(collection(FIREBASE_DB, 'Menus'), menuData);
-      }
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
+    navigation.navigate("ReviewMenu", { menuData });
   };
 
-  const renderItem = ({ item, index }) => (
-    <View style={styles.itemContainer}>
-      <Text>{item.name} - {item.quantity}</Text>
-      <TouchableOpacity onPress={() => handleDeleteItem(index)}>
-        <Icon name="delete" size={24} color="#FE660F" />
-      </TouchableOpacity>
-    </View>
-  );
+  const animateButton = () => {
+    Animated.sequence([
+      Animated.timing(buttonAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
-  const sections = [
-    {
-      title: 'Menu Heading',
-      data: [
-        <TextInput
-          placeholder="Menu Heading"
-          value={heading}
-          onChangeText={setHeading}
-          style={styles.input}
-        />,
-      ],
-    },
-    {
-      title: 'Add Item',
-      data: [
-        <View style={styles.itemInputContainer}>
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardAvoidingView behavior="padding">
+        <Text style={styles.heading}>Create Your Menu</Text>
+        <Text style={styles.subheading}>Fill in the details below</Text>
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="fast-food"
+            size={24}
+            color="black"
+            style={styles.icon}
+          />
           <TextInput
+            style={styles.input}
+            placeholder="Menu Heading"
+            value={heading}
+            onChangeText={setHeading}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="restaurant"
+            size={24}
+            color="black"
+            style={styles.icon}
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Item Name"
             value={newItemName}
             onChangeText={setNewItemName}
-            style={[styles.input, styles.itemInput]}
           />
           <TextInput
+            style={styles.input}
             placeholder="Quantity"
             value={newItemQuantity}
             onChangeText={setNewItemQuantity}
-            style={[styles.input, styles.itemInput]}
-            keyboardType='numeric'
+            keyboardType="numeric"
           />
           <TouchableOpacity onPress={handleAddItem} style={styles.addButton}>
-            <Icon name="add" size={24} color="#fff" />
+            <Ionicons name="add" size={24} color="white" />
           </TouchableOpacity>
-        </View>,
-        ...items,
-      ],
-      renderItem: ({ item, index }) => {
-        if (index === 0) {
-          return item; // Render the input container
-        } else {
-          return renderItem({ item, index: index - 1 }); // Render the list items
-        }
-      },
-    },
-    {
-      title: 'Dessert (optional)',
-      data: [
-        <TextInput
-          placeholder="Dessert"
-          value={dessert}
-          onChangeText={setDessert}
-          style={styles.input}
-        />,
-        <TextInput
-          placeholder="Dessert Quantity"
-          value={dessertQuantity}
-          onChangeText={setDessertQuantity}
-          style={styles.input}
-        />,
-        <TextInput
-          placeholder="Dessert Days (e.g., Monday, Tuesday)"
-          value={dessertDays}
-          onChangeText={setDessertDays}
-          style={styles.input}
-        />,
-      ],
-    },
-    {
-      title: 'Available Days',
-      data: [
-        <TextInput
-          placeholder="Available Days (e.g., Monday, Tuesday)"
-          value={days.join(', ')}
-          onChangeText={(text) => setDays(text.split(', '))}
-          style={styles.input}
-        />,
-      ],
-    },
-    {
-      title: 'Prices',
-      data: [
-        <TextInput
-          placeholder="Daily Price"
-          value={dailyPrice}
-          onChangeText={setDailyPrice}
-          style={styles.input}
-        />,
-        <TextInput
-          placeholder="Weekly Price"
-          value={weeklyPrice}
-          onChangeText={setWeeklyPrice}
-          style={styles.input}
-        />,
-        <TextInput
-          placeholder="Monthly Price"
-          value={monthlyPrice}
-          onChangeText={setMonthlyPrice}
-          style={styles.input}
-        />,
-      ],
-    },
-    {
-      title: 'Photos',
-      data: [
-        <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoButton}>
-          <Text style={styles.photoButtonText}>Choose Photos</Text>
-        </TouchableOpacity>,
-        <View style={styles.imageContainer}>
-          {avatars.map((avatar, index) => (
-            <Image key={index} source={{ uri: avatar }} style={styles.image} />
+        </View>
+        <ScrollView style={styles.itemsScrollView}>
+          {items.map((item, index) => (
+            <View key={index} style={styles.itemContainer}>
+              <View>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemQuantity}>
+                  Quantity: {item.quantity}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => handleDeleteItem(index)}>
+                <Ionicons name="trash" size={24} color="red" />
+              </TouchableOpacity>
+            </View>
           ))}
-        </View>,
-      ],
-    },
-    {
-      title: '',
-      data: [
-        <Button title="Save Menu" onPress={handleSaveMenu} />,
-      ],
-    },
-  ];
-
-  return (
-    <SectionList
-      sections={sections}
-      keyExtractor={(item, index) => index.toString()}
-      renderItem={({ item, section, index }) => section.renderItem ? section.renderItem({ item, index }) : item}
-      renderSectionHeader={({ section: { title } }) => (
-        title ? <Text style={styles.label}>{title}</Text> : null
-      )}
-      contentContainerStyle={styles.container}
-    />
+        </ScrollView>
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="ice-cream"
+            size={24}
+            color="black"
+            style={styles.icon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Dessert (optional)"
+            value={dessert}
+            onChangeText={setDessert}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Quantity"
+            value={dessertQuantity}
+            onChangeText={setDessertQuantity}
+            keyboardType="numeric"
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="calendar"
+            size={24}
+            color="black"
+            style={styles.icon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Dessert Availability Days (e.g., Friday)"
+            value={dessertDays}
+            onChangeText={setDessertDays}
+          />
+        </View>
+        <Animated.View style={{ transform: [{ scale: buttonAnim }] }}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              animateButton();
+              handleNext();
+            }}
+          >
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#EDF3EB',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginVertical: 5,
-    backgroundColor: '#fff',
-  },
-  itemInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  itemInput: {
     flex: 1,
+    padding: 20,
+    backgroundColor: "#EDF3EB",
+  },
+  heading: {
+    fontSize: 34,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#333333",
+  },
+  subheading: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#333333",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f2f2f2",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginVertical: 10, // Increased margin for better spacing
+  },
+  icon: {
     marginRight: 10,
   },
+  input: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+    color: "#333333",
+  },
   addButton: {
-    backgroundColor: '#FE660F',
+    backgroundColor: "#FE660F",
     padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemsScrollView: {
+    maxHeight: 200, // Limited height for scroll view
+    marginBottom: 20,
   },
   itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 5,
-    backgroundColor: '#f8f8f8',
-    padding: 10,
-    borderRadius: 5,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#cccccc",
   },
-  photoButton: {
-    backgroundColor: '#FE660F',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
+  itemName: {
+    fontSize: 14, // Smaller font size for item name
+    color: "#333333",
   },
-  photoButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  itemQuantity: {
+    fontSize: 14, // Smaller font size for item quantity
+    color: "#333333",
   },
-  imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  button: {
+    marginTop: 20,
+    backgroundColor: "#FE660F",
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: "center",
   },
-  image: {
-    width: 100,
-    height: 100,
-    borderRadius: 5,
-    margin: 5,
+  buttonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 

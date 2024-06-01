@@ -34,11 +34,12 @@ const ViewMenu = ({ route, navigation }) => {
 
       <Text style={styles.subheading}>Available Days</Text>
       <View style={styles.daysContainer}>
-        {menu.days.map((day, index) => (
-          <View key={index} style={styles.dayItem}>
-            <Text style={styles.dayText}>{day}</Text>
-          </View>
-        ))}
+        {menu.days &&
+          menu.days.map((day, index) => (
+            <View key={index} style={styles.dayItem}>
+              <Text style={styles.dayText}>{day}</Text>
+            </View>
+          ))}
       </View>
 
       <Text style={styles.subheading}>Prices</Text>
@@ -65,7 +66,10 @@ const ViewMenu = ({ route, navigation }) => {
         </View>
       )}
 
-      <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditMenu', { menu })}>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => navigation.navigate("EditMenu", { menu })}
+      >
         <Icon name="edit" size={24} color="#fff" />
         <Text style={styles.editButtonText}>Edit Menu</Text>
       </TouchableOpacity>

@@ -1,7 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Button, RefreshControl } from 'react-native';
-import { collection, getDocs, where, query } from 'firebase/firestore';
-import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  Button,
+  RefreshControl,
+} from "react-native";
+import { collection, getDocs, where, query } from "firebase/firestore";
+import { FIREBASE_DB, FIREBASE_AUTH } from "../../../../_utils/FirebaseConfig";
 
 const HomeScreen = ({ navigation }) => {
   const [menus, setMenus] = useState([]);
@@ -11,9 +21,15 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchMenus = async () => {
       try {
-        const q = query(collection(FIREBASE_DB, 'Menus'), where('chefId', '==', user.uid));
+        const q = query(
+          collection(FIREBASE_DB, "menus"),
+          where("chefId", "==", user.uid)
+        ); // Updated 'menus' to lowercase
         const querySnapshot = await getDocs(q);
-        const menusData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const menusData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setMenus(menusData);
       } catch (error) {
         console.error("Error fetching menus: ", error);
@@ -27,9 +43,15 @@ const HomeScreen = ({ navigation }) => {
     setRefreshing(true);
     const fetchMenus = async () => {
       try {
-        const q = query(collection(FIREBASE_DB, 'Menus'), where('chefId', '==', user.uid));
+        const q = query(
+          collection(FIREBASE_DB, "menus"),
+          where("chefId", "==", user.uid)
+        ); // Updated 'menus' to lowercase
         const querySnapshot = await getDocs(q);
-        const menusData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const menusData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setMenus(menusData);
       } catch (error) {
         console.error("Error fetching menus: ", error);
@@ -42,7 +64,10 @@ const HomeScreen = ({ navigation }) => {
   }, [user.uid]);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.menuContainer} onPress={() => navigation.navigate('ViewMenu', { menu: item })}>
+    <TouchableOpacity
+      style={styles.menuContainer}
+      onPress={() => navigation.navigate("ViewMenu", { menu: item })}
+    >
       <Text style={styles.heading}>{item.heading}</Text>
       <Text style={styles.price}>${item.monthlyPrice}</Text>
     </TouchableOpacity>
@@ -55,11 +80,16 @@ const HomeScreen = ({ navigation }) => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.container}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListHeaderComponent={
           <>
             <StatusBar barStyle="dark-content" backgroundColor={"white"} />
-            <Button title="Add Menu" onPress={() => navigation.navigate('CreateMenu')} />
+            <Button
+              title="Add Menu"
+              onPress={() => navigation.navigate("CreateMenu")}
+            />
           </>
         }
       />
@@ -70,27 +100,27 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   container: {
     padding: 20,
   },
   menuContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
   },
   heading: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   price: {
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
   },
 });
 

@@ -10,7 +10,7 @@ import ProfileScreen from './ChefMain/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-const StudentHomeScreen = () => {
+const ChefHomeScreen = () => {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -53,4 +53,4 @@ const StudentHomeScreen = () => {
     );
 };
 
-export default StudentHomeScreen;
+export default ChefHomeScreen;
