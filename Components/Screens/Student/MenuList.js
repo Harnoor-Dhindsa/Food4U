@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, RefreshControl, Platform } from 'react-native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 
@@ -31,11 +31,14 @@ const MenuList = ({ route, navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.menuContainer} onPress={() => navigateToMenuDetail(item)}>
-      {item.avatar ? <Image source={{ uri: item.avatar }} style={styles.image} /> : null}
+      {item.avatars && item.avatars.length > 0 ? (
+        <Image source={{ uri: item.avatars[0] }} style={styles.image} onError={(e) => console.log(e.nativeEvent.error)} />
+      ) : null}
       <View style={styles.infoContainer}>
         <Text style={styles.menuTitle}>{item.heading}</Text>
-        <Text style={styles.menuDescription}>{item.days}</Text>
+        <Text style={styles.menuDescription}>{item.days.join(', ')}</Text>
       </View>
+      <Text style={styles.menuPrice}>${item.monthlyPrice}</Text>
     </TouchableOpacity>
   );
 
@@ -55,11 +58,11 @@ const MenuList = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 70 : 20,
     backgroundColor: '#EDF3EB',
   },
   flatListContainer: {
-    padding: 20,
+    paddingHorizontal: 20,
   },
   menuContainer: {
     flexDirection: 'row',
@@ -67,9 +70,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#FFEDD5',
     borderColor: '#FE660F',
     borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   image: {
     width: 50,
@@ -87,6 +95,12 @@ const styles = StyleSheet.create({
   menuDescription: {
     fontSize: 14,
     color: 'gray',
+  },
+  menuPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FE660F',
+    marginLeft: 10,
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Button, SectionList, Platform, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, SectionList, Platform, SafeAreaView } from 'react-native';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
@@ -78,6 +78,8 @@ const CreateMenu = ({ route, navigation }) => {
       monthlyPrice,
       avatars,
       chefId: user.uid,
+      createdAt: menu ? menu.createdAt : new Date(),  // Set creation date if it is a new menu
+      updatedAt: new Date(),  // Update date for both new and existing menus
     };
 
     try {

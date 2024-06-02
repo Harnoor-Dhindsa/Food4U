@@ -1,54 +1,68 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, RefreshControl } from 'react-native';
-import { collection, getDocs, where, query } from 'firebase/firestore';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, RefreshControl, Alert, FlatList, Modal } from 'react-native';
+import { collection, getDocs, where, query, deleteDoc, doc } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
   const [menus, setMenus] = useState([]);
+  const [selectedMenuId, setSelectedMenuId] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
   const user = FIREBASE_AUTH.currentUser;
   const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchMenus = async () => {
-      try {
-        const q = query(collection(FIREBASE_DB, 'Menus'), where('chefId', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        const menusData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setMenus(menusData);
-      } catch (error) {
-        console.error("Error fetching menus: ", error);
-      }
-    };
-
     fetchMenus();
   }, [user.uid]);
+
+  const fetchMenus = async () => {
+    try {
+      const q = query(collection(FIREBASE_DB, 'Menus'), where('chefId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const menusData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMenus(menusData);
+    } catch (error) {
+      console.error("Error fetching menus: ", error);
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    const fetchMenus = async () => {
-      try {
-        const q = query(collection(FIREBASE_DB, 'Menus'), where('chefId', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        const menusData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setMenus(menusData);
-      } catch (error) {
-        console.error("Error fetching menus: ", error);
-      } finally {
-        setRefreshing(false);
-      }
-    };
-
-    fetchMenus();
+    fetchMenus().finally(() => setRefreshing(false));
   }, [user.uid]);
 
+  const handleDeleteMenu = async () => {
+    if (selectedMenuId) {
+      try {
+        await deleteDoc(doc(FIREBASE_DB, 'Menus', selectedMenuId));
+        setMenus(menus.filter(menu => menu.id !== selectedMenuId));
+        setModalVisible(false);
+      } catch (error) {
+        console.error("Error deleting menu: ", error);
+      }
+    }
+  };
+
+  const handleLongPress = (menuId) => {
+    setSelectedMenuId(menuId);
+    setModalVisible(true);
+  };
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.menuContainer} onPress={() => navigation.navigate('ViewMenu', { menu: item })}>
-      <View>
-        <Text style={styles.heading}>{item.heading}</Text>
-        <Text style={styles.days}>{item.days.join(', ')}</Text>
+    <TouchableOpacity
+      style={styles.menuContainer}
+      onPress={() => navigation.navigate('ViewMenu', { menu: item })}
+      onLongPress={() => handleLongPress(item.id)}
+    >
+      <View style={styles.menuContent}>
+        <View>
+          <Text style={styles.heading}>{item.heading}</Text>
+          <Text style={styles.days}>{item.days.join(', ')}</Text>
+        </View>
+        <Text style={styles.price}>${item.monthlyPrice}</Text>
       </View>
-      <Text style={styles.price}>${item.monthlyPrice}</Text>
     </TouchableOpacity>
   );
 
@@ -59,12 +73,37 @@ const HomeScreen = ({ navigation }) => {
         data={menus}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.container}
       />
       <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('CreateMenu')}>
         <Icon name="add" size={24} color="#fff" />
       </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Do you want to delete this menu?</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleDeleteMenu}
+            >
+              <Text style={styles.modalButtonText}>Delete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -75,18 +114,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDF3EB',
   },
   container: {
-    padding: 20,
+    paddingVertical: 20,
   },
   menuContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
     padding: 15,
     borderRadius: 10,
     backgroundColor: '#FFEDD5',
     borderWidth: 1,
-    borderColor: '#FE660F' // Light orange background
+    borderColor: '#FE660F',
+    marginHorizontal: 10,
+  },
+  menuContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   heading: {
     fontSize: 18,
@@ -99,13 +144,13 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#FE660F', // Orange color for price
+    color: '#FE660F',
   },
   addButton: {
     position: 'absolute',
     right: 20,
     bottom: 20,
-    backgroundColor: '#FE660F', // Orange color for the button
+    backgroundColor: '#FE660F',
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -116,6 +161,49 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 5,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: {
+    width: 300,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    backgroundColor: '#FE660F',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalCancelButton: {
+    width: '100%',
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: 'white',
+    alignItems: 'center',
+  },
+  modalCancelButtonText: {
+    color: '#FE660F',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

@@ -151,7 +151,7 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
       <View style={styles.profileContainer}>
         <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
         {editMode && (
