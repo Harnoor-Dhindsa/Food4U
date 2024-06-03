@@ -1,9 +1,12 @@
+// HomeScreen.js
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, favorites, toggleFavorite }) => {
   const [chefs, setChefs] = useState([]);
 
   useEffect(() => {
@@ -21,15 +24,28 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('MenuList', { chefId });
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.chefContainer} onPress={() => navigateToMenuList(item.id)}>
-      <Image source={{ uri: item.profilePic }} style={styles.profilePic} />
-      <View style={styles.infoContainer}>
-        <Text style={styles.name}>{item.firstName} {item.lastName}</Text>
-        <Text style={styles.email}>{item.email}</Text>
+  const renderItem = ({ item }) => {
+    const isFavorite = favorites.some((chef) => chef.id === item.id);
+
+    return (
+      <View style={styles.chefContainer}>
+        <TouchableOpacity onPress={() => navigateToMenuList(item.id)}>
+          <Image source={{ uri: item.profilePic }} style={styles.profilePic} />
+          <View style={styles.infoContainer}>
+            <Text style={styles.name}>{item.firstName} {item.lastName}</Text>
+            <Text style={styles.email}>{item.email}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => toggleFavorite(item)}>
+          <Ionicons 
+            name={isFavorite ? "heart" : "heart-outline"} 
+            size={24} 
+            color={isFavorite ? "red" : "grey"} 
+          />
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
