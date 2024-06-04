@@ -28,7 +28,7 @@ const ProfileScreen = ({ navigation }) => {
   }, [user]);
 
   const loadUserProfile = async () => {
-    const docRef = doc(FIREBASE_DB, 'ChefsProfiles', user.uid);
+    const docRef = doc(FIREBASE_DB, 'StudentsProfiles', user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const profileData = docSnap.data();
@@ -52,7 +52,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     if (user) {
-      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
+      await setDoc(doc(FIREBASE_DB, 'StudentsProfiles', user.uid), {
         firstName,
         lastName,
         email,
