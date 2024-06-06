@@ -141,8 +141,8 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handlePhoneNumberChange = (text) => {
-    // Only format if the text is not being deleted
-    if (text && text.length >= phoneNumber.length) {
+    // Only format if the text is not being deleted and is defined
+    if (text && text.length >= (phoneNumber ? phoneNumber.length : 0)) {
       setPhoneNumber(formatPhoneNumber(text));
     } else {
       setPhoneNumber(text);
