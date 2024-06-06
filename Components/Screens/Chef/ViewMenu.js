@@ -116,12 +116,15 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#FE660F',
+    textAlign: 'center',
     marginBottom: 20,
     color: 'black',
     textAlign: 'center',
   },
   subheading: {
     fontSize: 18,
+    color: '#333',
     marginVertical: 10,
     color: 'black',
     fontWeight: 'bold',
@@ -129,6 +132,7 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginVertical: 5,
     padding: 10,
     backgroundColor: '#f78b4d',

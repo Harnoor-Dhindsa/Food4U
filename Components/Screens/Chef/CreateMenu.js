@@ -315,6 +315,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
   },
+  addButton: {
+    backgroundColor: '#FE660F',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  photoButton: {
+    backgroundColor: '#FE660F',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  photoButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   image: {
     width: 100,
     height: 100,

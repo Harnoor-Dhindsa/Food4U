@@ -96,7 +96,6 @@ const CreateMenu = ({ route, navigation }) => {
       Alert.alert('Error', error.message);
     }
   };
-
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
       <Text>{item.name} - {item.quantity}</Text>
@@ -314,6 +313,10 @@ const styles = StyleSheet.create({
   imageWrapper: {
     position: 'relative',
   },
+  itemInput: {
+    flex: 1,
+    marginHorizontal: 5,
+  },
   image: {
     width: 100,
     height: 100,
@@ -339,6 +342,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  photoButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

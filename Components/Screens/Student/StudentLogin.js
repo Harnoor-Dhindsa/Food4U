@@ -58,7 +58,12 @@ const StudentLogin = ({ navigation }) => {
           />
         </View>
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed" size={24} color="black" style={styles.icon} />
+          <Ionicons
+            name="lock-closed"
+            size={24}
+            color="black"
+            style={styles.icon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Enter your password"
@@ -66,17 +71,26 @@ const StudentLogin = ({ navigation }) => {
             value={password}
             onChangeText={setPassword}
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-            <Ionicons name={showPassword ? "eye-off" : "eye"} size={24} color="black" />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={24}
+              color="black"
+            />
           </TouchableOpacity>
         </View>
-        <Text style={styles.forgot}>Forgot Password?</Text>
+        <Text style={styles.forgot} onPress={() => navigation.navigate("ForgotPassword")}>
+          Forgot Password?
+        </Text>
         <TouchableOpacity style={styles.button} onPress={handleSignIn}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.signupButton} onPress={goToSignUp}>
           <Text style={styles.textd}>
-            Don't have an account yet?{' '}
+            Don't have an account yet?{" "}
             <Text style={styles.signup}>Sign up</Text>
           </Text>
         </TouchableOpacity>

@@ -113,6 +113,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EDF3EB',
   },
+  header: {
+    padding: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 3,
+    borderBottomColor: '#FE660F',
+    alignItems: 'center',
+  },
+  welcomeMessage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FE660F',
+  },
   container: {
     paddingVertical: 20,
   },
