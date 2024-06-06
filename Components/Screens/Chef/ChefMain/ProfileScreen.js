@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../../_utils/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import CustomModalPicker from '../../../others/CustomModalPicker';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -33,7 +34,7 @@ const ProfileScreen = ({ navigation }) => {
       const profileData = docSnap.data();
       setFirstName(profileData.firstName);
       setLastName(profileData.lastName);
-      setPhoneNumber(profileData.phoneNumber)
+      setPhoneNumber(profileData.phoneNumber);
       setGender(profileData.gender);
       setAge(profileData.age);
       setLocation(profileData.location);
@@ -71,7 +72,7 @@ const ProfileScreen = ({ navigation }) => {
         navigation.replace('Screen');
       })
       .catch(error => {
-        alert("Error in logging out");
+        alert('Error in logging out');
       });
   };
 
@@ -103,9 +104,54 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  const fetchLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission to access location was denied');
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = location.coords;
+
+    let address = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude
+    });
+
+    if (address.length > 0) {
+      const addr = address[0];
+      const formattedAddress = `${addr.street}, ${addr.city}, ${addr.region}, ${addr.postalCode}, ${addr.country}`;
+      setLocation(formattedAddress);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocation();
+  }, []);
+
+  const formatPhoneNumber = (text) => {
+    // Remove all non-numeric characters
+    const cleaned = ('' + text).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `+1 ${match[1]}-${match[2]}-${match[3]}`;
+    }
+    return text;
+  };
+
+  const handlePhoneNumberChange = (text) => {
+    // Only format if the text is not being deleted
+    if (text.length >= phoneNumber.length) {
+      setPhoneNumber(formatPhoneNumber(text));
+    } else {
+      setPhoneNumber(text);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={"white"} />
+      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
       <View style={styles.profileContainer}>
         <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
         {editMode && (
@@ -155,25 +201,24 @@ const ProfileScreen = ({ navigation }) => {
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={phoneNumber}
             editable={editMode}
-            onChangeText={setPhoneNumber}
+            onChangeText={handlePhoneNumberChange}
             placeholder="Phone Number"
             placeholderTextColor="#ccc"
+            keyboardType="phone-pad"
           />
         </View>
         <View style={styles.row}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Gender</Text>
-            <View style={[styles.input, styles.pickerContainer]}>
-              <Picker
-                selectedValue={gender}
-                onValueChange={(itemValue) => setGender(itemValue)}
-                enabled={editMode}
-                style={styles.picker}
-              >
-                <Picker.Item label="Male" value="Male" />
-                <Picker.Item label="Female" value="Female" />
-              </Picker>
-            </View>
+            <CustomModalPicker
+              options={[
+                { label: 'Male', value: 'Male' },
+                { label: 'Female', value: 'Female' },
+              ]}
+              selectedValue={gender}
+              onValueChange={setGender}
+              enabled={editMode}
+            />
           </View>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Age</Text>
@@ -232,11 +277,11 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   profilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: '#FE660F',
   },
   choosePhotoButton: {
     marginTop: 10,
@@ -254,10 +299,10 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   label: {
-    color: 'black',
+    color: '#333',
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -267,19 +312,21 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     paddingHorizontal: 10,
-    color: 'black',
+    color: '#333',
+    backgroundColor: '#fff',
   },
   pickerContainer: {
     justifyContent: 'center',
   },
   picker: {
     height: 40,
-    color: 'black',
+    color: '#333',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%', // Take full width
+    marginTop: 20,
   },
   button: {
     backgroundColor: '#FE660F',
@@ -287,6 +334,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     marginHorizontal: 5,
+    flex: 1,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',

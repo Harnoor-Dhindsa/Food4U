@@ -1,22 +1,40 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView } from 'react-native';
-import { FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native';
 
 const ChefSignup = ({navigation}) => {
-  const [name, setName] = useState('');
+  const [FirstName, setFirstName] = useState('');
+  const [LastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const auth = FIREBASE_AUTH;
 
-  const handleSignUp =  async () => {
+  const handleSignUp = async () => {
     try{
       const response = await createUserWithEmailAndPassword(auth, email, password);
+      const user = response.user;
+      
+      // Save user details to Firestore
+      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
+        firstName: FirstName,
+        lastName: LastName,
+        email: email
+      });
+
       console.log(response);
-      navigation.replace('ChefHomeScreen');
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'ChefHomeScreen' }],
+        })
+      );
+      alert("Go to Profile page to use the app!");
     } catch (error){
       console.log(error);
       alert("Error in creating account: " + error.message);
@@ -44,9 +62,18 @@ const ChefSignup = ({navigation}) => {
           <Ionicons name="person" size={24} color="black" style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
-            value={name}
-            onChangeText={setName}
+            placeholder="First Name"
+            value={FirstName}
+            onChangeText={setFirstName}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Ionicons name="person" size={24} color="black" style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Last Name"
+            value={LastName}
+            onChangeText={setLastName}
           />
         </View>
         <View style={styles.inputContainer}>
@@ -122,24 +149,6 @@ const styles = StyleSheet.create({
   eyeIcon: {
     paddingHorizontal: 10,
   },
-  label: {
-    marginTop: "10%",
-    fontSize: 15,
-    marginBottom: 5,
-    fontWeight: 'bold',
-  },
-  labele: {
-    marginTop: "8%",
-    fontSize: 15,
-    marginBottom: 5,
-    fontWeight: 'bold',
-  },
-  labelp: {
-    marginTop: "8%",
-    fontSize: 15,
-    marginBottom: 5,
-    fontWeight: 'bold',
-  },
   textd: {
     textAlign: 'center',
     marginTop: 30,
@@ -153,10 +162,6 @@ const styles = StyleSheet.create({
     color: '#FE660F',
     fontWeight: 'bold',
     fontSize: 15,
-  },
-  input: {
-    flex: 1,
-    height: 50,
   },
   button: {
     backgroundColor: '#FE660F',
