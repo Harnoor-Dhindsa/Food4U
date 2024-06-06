@@ -142,7 +142,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handlePhoneNumberChange = (text) => {
     // Only format if the text is not being deleted
-    if (text.length >= phoneNumber.length) {
+    if (text && text.length >= phoneNumber.length) {
       setPhoneNumber(formatPhoneNumber(text));
     } else {
       setPhoneNumber(text);
@@ -204,7 +204,7 @@ const ProfileScreen = ({ navigation }) => {
             onChangeText={handlePhoneNumberChange}
             placeholder="Phone Number"
             placeholderTextColor="#ccc"
-            keyboardType="phone-pad"
+            keyboardType="numeric"
           />
         </View>
         <View style={styles.row}>
