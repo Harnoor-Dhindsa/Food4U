@@ -4,6 +4,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native';
 
 const StudentSignup = ({navigation}) => {
   const [FirstName, setFirstName] = useState('');
@@ -15,7 +16,7 @@ const StudentSignup = ({navigation}) => {
   const auth = FIREBASE_AUTH;
 
   const handleSignUp =  async () => {
-    try{
+    try {
       const response = await createUserWithEmailAndPassword(auth, email, password);
       const user = response.user;
       
@@ -27,9 +28,16 @@ const StudentSignup = ({navigation}) => {
       });
 
       console.log(response);
-      navigation.replace('StudentHomeScreen');
+      
+      // Reset the navigation stack
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'StudentHomeScreen' }]
+        })
+      );
       alert("Go to Profile page to use the app!");
-    } catch (error){
+    } catch (error) {
       console.log(error);
       alert("Error in creating account: " + error.message);
     }

@@ -4,6 +4,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native';
 
 const ChefSignup = ({navigation}) => {
   const [FirstName, setFirstName] = useState('');
@@ -14,7 +15,7 @@ const ChefSignup = ({navigation}) => {
 
   const auth = FIREBASE_AUTH;
 
-  const handleSignUp =  async () => {
+  const handleSignUp = async () => {
     try{
       const response = await createUserWithEmailAndPassword(auth, email, password);
       const user = response.user;
@@ -27,7 +28,12 @@ const ChefSignup = ({navigation}) => {
       });
 
       console.log(response);
-      navigation.replace('ChefHomeScreen');
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'ChefHomeScreen' }],
+        })
+      );
       alert("Go to Profile page to use the app!");
     } catch (error){
       console.log(error);

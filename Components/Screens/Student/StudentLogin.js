@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import { FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native'; // Import CommonActions
 
 const StudentLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,14 @@ const StudentLogin = ({ navigation }) => {
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
       console.log(response);
-      navigation.replace('StudentHomeScreen');
+
+      // Reset the navigation stack and navigate to StudentHomeScreen
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'StudentHomeScreen' }],
+        })
+      );
     } catch (error) {
       console.log(error);
       alert("Check your email and password");

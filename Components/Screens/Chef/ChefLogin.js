@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import { FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native';
 
 const ChefLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,12 @@ const ChefLogin = ({ navigation }) => {
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
       console.log(response);
-      navigation.replace('ChefHomeScreen');
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'ChefHomeScreen' }],
+        })
+      );
     } catch (error) {
       console.log(error);
       alert("Check your email and password");

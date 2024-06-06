@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, RefreshControl, Platform } from 'react-native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../_utils/FirebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
 
 const MenuList = ({ route, navigation }) => {
   const { chefId } = route.params;
@@ -44,6 +45,9 @@ const MenuList = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#FE660F" />
+        </TouchableOpacity>
       <FlatList
         data={menus}
         renderItem={renderItem}
@@ -58,7 +62,7 @@ const MenuList = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 70 : 20,
+    paddingTop: Platform.OS === 'ios' ? 70 : 50,
     backgroundColor: '#EDF3EB',
   },
   flatListContainer: {
@@ -101,6 +105,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FE660F',
     marginLeft: 10,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    marginLeft: 20,
+    marginTop: -30,
+    marginBottom: 20,
   },
 });
 
