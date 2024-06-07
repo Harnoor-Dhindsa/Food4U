@@ -1,27 +1,56 @@
-import React, { useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
-import { AppContext } from '../../../others/AppContext';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useContext } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from "react-native";
+import { AppContext } from "../../../others/AppContext";
+import { Ionicons } from "@expo/vector-icons";
 
 const CartScreen = ({ navigation }) => {
-  const { cart } = useContext(AppContext);
+  const { cart, removeFromCart } = useContext(AppContext);
 
   const navigateToMenuDetail = (menu) => {
-    navigation.navigate('MenuDetail', { menu });
+    navigation.navigate("MenuDetail", { menu });
+  };
+
+  const handleRemoveFromCart = (menu) => {
+    removeFromCart(menu);
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.menuContainer} onPress={() => navigateToMenuDetail(item)}>
-      {item.avatars && item.avatars.length > 0 ? (
-        <Image source={{ uri: item.avatars[0] }} style={styles.image} onError={(e) => console.log(e.nativeEvent.error)} />
-      ) : null}
-      <View style={styles.infoContainer}>
-        <Text style={styles.menuTitle}>{item.heading}</Text>
-        <Text style={styles.menuDescription}>{item.days.join(', ')}</Text>
-        <Text style={styles.itemPlan}>Selected Plan: {item.selectedPlan}</Text>
-      </View>
-      <Text style={styles.menuPrice}>${item.monthlyPrice}</Text>
-    </TouchableOpacity>
+    <View style={styles.menuContainer}>
+      <TouchableOpacity
+        style={styles.menuInfo}
+        onPress={() => navigateToMenuDetail(item)}
+      >
+        {item.avatars && item.avatars.length > 0 ? (
+          <Image
+            source={{ uri: item.avatars[0] }}
+            style={styles.image}
+            onError={(e) => console.log(e.nativeEvent.error)}
+          />
+        ) : null}
+        <View style={styles.infoContainer}>
+          <Text style={styles.menuTitle}>{item.heading}</Text>
+          <Text style={styles.menuDescription}>{item.days.join(", ")}</Text>
+          <Text style={styles.itemPlan}>
+            Selected Plan: {item.selectedPlan}
+          </Text>
+        </View>
+        <Text style={styles.menuPrice}>${item.monthlyPrice}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleRemoveFromCart(item)}
+      >
+        <Ionicons name="trash-outline" size={24} color="#FE660F" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -39,30 +68,35 @@ const CartScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 70 : 50,
-    backgroundColor: '#EDF3EB',
+    paddingTop: Platform.OS === "ios" ? 70 : 50,
+    backgroundColor: "#EDF3EB",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   flatListContainer: {
     paddingHorizontal: 20,
   },
   menuContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: '#FFEDD5',
-    borderColor: '#FE660F',
+    backgroundColor: "#FFEDD5",
+    borderColor: "#FE660F",
     borderWidth: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  menuInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   image: {
     width: 50,
@@ -75,21 +109,24 @@ const styles = StyleSheet.create({
   },
   menuTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   menuDescription: {
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
   },
   itemPlan: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   menuPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FE660F',
+    fontWeight: "bold",
+    color: "#FE660F",
     marginLeft: 10,
+  },
+  deleteButton: {
+    padding: 5,
   },
 });
 

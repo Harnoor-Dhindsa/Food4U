@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState } from "react";
 
 export const AppContext = createContext();
 
@@ -11,7 +11,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const removeFromFavorites = (menu) => {
-    setFavorites(favorites.filter(item => item.id !== menu.id));
+    setFavorites(favorites.filter((item) => item.id !== menu.id));
   };
 
   const addToCart = (menu, selectedPlan) => {
@@ -19,7 +19,11 @@ export const AppProvider = ({ children }) => {
   };
 
   const removeFromCart = (menu) => {
-    setCart(cart.filter(item => item.id !== menu.id));
+    setCart(
+      cart.filter(
+        (item) => item.id !== menu.id || item.selectedPlan !== menu.selectedPlan
+      )
+    );
   };
 
   return (
