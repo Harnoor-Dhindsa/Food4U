@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, RefreshControl, Platform } from 'react-native';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { FIREBASE_DB } from '../../../_utils/FirebaseConfig';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { FIREBASE_DB, FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 
 const MenuList = ({ route, navigation }) => {
   const { chefId } = route.params;
   const [menus, setMenus] = useState([]);
+  const [chef, setChef] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const user = FIREBASE_AUTH.currentUser;
 
   const fetchMenus = async () => {
     const menusCollection = collection(FIREBASE_DB, 'Menus');
@@ -17,14 +19,38 @@ const MenuList = ({ route, navigation }) => {
     setMenus(menusList);
   };
 
+  const fetchChef = async () => {
+    const chefDoc = doc(FIREBASE_DB, 'ChefsProfiles', chefId);
+    const chefSnapshot = await getDoc(chefDoc);
+    if (chefSnapshot.exists()) {
+      setChef(chefSnapshot.data());
+    }
+  };
+
   useEffect(() => {
+    fetchChef();
     fetchMenus();
   }, [chefId]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchMenus().then(() => setRefreshing(false));
+    Promise.all([fetchChef(), fetchMenus()]).then(() => setRefreshing(false));
   }, [chefId]);
+
+  const navigateToChat = () => {
+    if (chef && user) {
+      navigation.navigate('StudentChatScreen', {
+        chefId,
+        chefName: `${chef.firstName} ${chef.lastName}`,
+        chefEmail: chef.email,
+        studentId: user.uid,
+        studentName: user.displayName || user.email,
+        studentEmail: user.email
+      });
+    } else {
+      console.error('Chef or user data not available');
+    }
+  };
 
   const navigateToMenuDetail = (menu) => {
     navigation.navigate('MenuDetail', { menu });
@@ -46,8 +72,28 @@ const MenuList = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FE660F" />
-        </TouchableOpacity>
+        <Ionicons name="arrow-back" size={24} color="#FE660F" />
+      </TouchableOpacity>
+      {chef && (
+        <View style={styles.chefInfoContainer}>
+          <Image source={{ uri: chef.profilePic }} style={styles.chefImage} />
+          <Text style={styles.chefName}>{chef.firstName} {chef.lastName}</Text>
+          <View style={styles.chefContact}>
+            <Ionicons name="mail" size={16} color="gray" />
+            <Text style={styles.chefEmail}>{chef.email}</Text>
+          </View>
+          {chef.phoneNumber && (
+            <View style={styles.chefContact}>
+              <Ionicons name="call" size={16} color="gray" />
+              <Text style={styles.chefPhone}>{chef.phoneNumber}</Text>
+            </View>
+          )}
+          <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#fff" style={styles.chatIcon} />
+            <Text style={styles.chatButtonText}>Chat</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <FlatList
         data={menus}
         renderItem={renderItem}
@@ -121,6 +167,51 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginTop: -30,
     marginBottom: 20,
+  },
+  chefInfoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  chefImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+  },
+  chefName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  chefContact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
+  },
+  chefEmail: {
+    fontSize: 16,
+    color: 'gray',
+    marginLeft: 5,
+  },
+  chefPhone: {
+    fontSize: 16,
+    color: 'gray',
+    marginLeft: 5,
+  },
+  chatButton: {
+    marginTop: 10,
+    flexDirection: 'row',
+    backgroundColor: '#FE660F',
+    padding: 10,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  chatIcon: {
+    marginRight: 5,
+  },
+  chatButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
