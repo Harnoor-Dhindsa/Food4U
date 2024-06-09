@@ -7,7 +7,7 @@
 6. Forgot Password
 7. Search bar for the student
 8. location access for both the student and chef
-9. 1. implementing the add to cart feature
+9. implementing the add to cart feature
 10. implementing the chat feature
 11. create a filter along with the search bar for the student 
 
