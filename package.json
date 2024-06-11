@@ -16,10 +16,15 @@
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
     "@react-navigation/stack": "^6.3.29",
+    "@stripe/stripe-react-native": "^0.38.0",
+    "axios": "^1.7.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
     "expo": "^51.0.2",
     "expo-image-picker": "^15.0.5",
     "expo-location": "~17.0.1",
     "expo-status-bar": "^1.12.1",
+    "express": "^4.19.2",
     "firebase": "^10.10.0",
     "react": "18.2.0",
     "react-native": "^0.74.1",
@@ -31,7 +36,8 @@
     "react-native-screen": "^1.0.1",
     "react-native-screens": "^3.31.1",
     "react-native-swipe-list-view": "^3.2.9",
-    "react-native-swiper": "^1.6.0"
+    "react-native-swiper": "^1.6.0",
+    "stripe": "^15.10.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

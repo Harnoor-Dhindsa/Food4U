@@ -14,8 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 const CartScreen = ({ navigation }) => {
   const { cart, removeFromCart } = useContext(AppContext);
 
-  const navigateToMenuDetail = (menu) => {
-    navigation.navigate("MenuDetail", { menu });
+  const navigateToCheckout = (menu) => {
+    navigation.navigate("Checkout", { menu });
   };
 
   const handleRemoveFromCart = (menu) => {
@@ -26,7 +26,7 @@ const CartScreen = ({ navigation }) => {
     <View style={styles.menuContainer}>
       <TouchableOpacity
         style={styles.menuInfo}
-        onPress={() => navigateToMenuDetail(item)}
+        onPress={() => navigateToCheckout(item)}
       >
         {item.avatars && item.avatars.length > 0 ? (
           <Image
@@ -42,7 +42,7 @@ const CartScreen = ({ navigation }) => {
             Selected Plan: {item.selectedPlan}
           </Text>
         </View>
-        <Text style={styles.menuPrice}>${item.monthlyPrice}</Text>
+        <Text style={styles.menuPrice}>${item.price}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.deleteButton}
