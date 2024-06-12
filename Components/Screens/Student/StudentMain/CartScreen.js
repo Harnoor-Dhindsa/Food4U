@@ -14,44 +14,47 @@ import { Ionicons } from "@expo/vector-icons";
 const CartScreen = ({ navigation }) => {
   const { cart, removeFromCart } = useContext(AppContext);
 
-  const navigateToCheckout = (menu) => {
-    navigation.navigate("Checkout", { menu });
-  };
-
   const handleRemoveFromCart = (menu) => {
     removeFromCart(menu);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.menuContainer}>
-      <TouchableOpacity
-        style={styles.menuInfo}
-        onPress={() => navigateToCheckout(item)}
-      >
-        {item.avatars && item.avatars.length > 0 ? (
-          <Image
-            source={{ uri: item.avatars[0] }}
-            style={styles.image}
-            onError={(e) => console.log(e.nativeEvent.error)}
-          />
-        ) : null}
-        <View style={styles.infoContainer}>
-          <Text style={styles.menuTitle}>{item.heading}</Text>
-          <Text style={styles.menuDescription}>{item.days.join(", ")}</Text>
-          <Text style={styles.itemPlan}>
-            Selected Plan: {item.selectedPlan}
-          </Text>
-        </View>
-        <Text style={styles.menuPrice}>${item.price}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleRemoveFromCart(item)}
-      >
-        <Ionicons name="trash-outline" size={24} color="#FE660F" />
-      </TouchableOpacity>
-    </View>
-  );
+const navigateToCheckout = (menu) => {
+  navigation.navigate("Checkout", {
+    menu,
+    selectedPlan: menu.selectedPlan,
+    planPrice: menu.price,
+  });
+};
+
+const renderItem = ({ item }) => (
+  <View style={styles.menuContainer}>
+    <TouchableOpacity
+      style={styles.menuInfo}
+      onPress={() => navigateToCheckout(item)}
+    >
+      {item.avatars && item.avatars.length > 0 ? (
+        <Image
+          source={{ uri: item.avatars[0] }}
+          style={styles.image}
+          onError={(e) => console.log(e.nativeEvent.error)}
+        />
+      ) : null}
+      <View style={styles.infoContainer}>
+        <Text style={styles.menuTitle}>{item.heading}</Text>
+        <Text style={styles.menuDescription}>{item.days.join(", ")}</Text>
+        <Text style={styles.itemPlan}>Selected Plan: {item.selectedPlan}</Text>
+      </View>
+      <Text style={styles.menuPrice}>${item.price}</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.deleteButton}
+      onPress={() => handleRemoveFromCart(item)}
+    >
+      <Ionicons name="trash-outline" size={24} color="#FE660F" />
+    </TouchableOpacity>
+  </View>
+);
+
 
   return (
     <View style={styles.container}>

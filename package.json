@@ -16,6 +16,7 @@
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
     "@react-navigation/stack": "^6.3.29",
+    "@stripe/stripe-js": "^3.5.0",
     "@stripe/stripe-react-native": "^0.38.0",
     "axios": "^1.7.2",
     "body-parser": "^1.20.2",
