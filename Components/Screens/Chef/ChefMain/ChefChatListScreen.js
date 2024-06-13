@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 
@@ -25,6 +25,7 @@ const ChefChatListScreen = ({ navigation }) => {
       chefName: chat.chefName,
       studentId: chat.studentId,
       studentName: chat.studentName,
+      studentProfilePic: chat.studentProfilePic,
     });
   };
 
@@ -51,18 +52,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EDF3EB',
+    paddingTop: Platform.OS === 'ios' ? 70 : 50,
   },
   flatListContainer: {
     paddingHorizontal: 20,
   },
   chatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    marginVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#FFEDD5',
+    borderColor: '#FE660F',
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   chatItemText: {
     fontSize: 18,
     fontWeight: 'bold',
+    flex: 1,
+    color: '#333',
   },
   chatItemSubText: {
     fontSize: 14,

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Send } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
@@ -110,7 +110,8 @@ const ChefChatScreen = ({ route, navigation }) => {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#EDF3EB' }}>
+    <View style={styles.container}>
+      <StatusBar barStyle={Platform.OS === 'android' ? 'light-content' : 'dark-content'} backgroundColor="#fff" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FE660F" />
@@ -130,13 +131,17 @@ const ChefChatScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#EDF3EB',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 50,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomWidth: 2,
+    borderBottomColor: '#FE660F',
   },
   backButton: {
     marginRight: 10,
@@ -144,6 +149,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#FE660F',
   },
   inputToolbar: {
     backgroundColor: '#FFEDD5',

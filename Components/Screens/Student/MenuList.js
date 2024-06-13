@@ -37,16 +37,22 @@ const MenuList = ({ route, navigation }) => {
     Promise.all([fetchChef(), fetchMenus()]).then(() => setRefreshing(false));
   }, [chefId]);
 
-  const navigateToChat = () => {
+  const navigateToChat = async () => {
     if (chef && user) {
-      navigation.navigate('StudentChatScreen', {
-        chefId,
-        chefName: `${chef.firstName} ${chef.lastName}`,
-        chefEmail: chef.email,
-        studentId: user.uid,
-        studentName: user.displayName || user.email,
-        studentEmail: user.email
-      });
+      const studentDoc = await getDoc(doc(FIREBASE_DB, 'StudentsProfiles', user.uid));
+      if (studentDoc.exists()) {
+        const studentData = studentDoc.data();
+        const studentName = `${studentData.firstName} ${studentData.lastName}`; // Ensure you get a proper name
+        navigation.navigate('StudentChatScreen', {
+          chefId,
+          chefName: `${chef.firstName} ${chef.lastName}`,
+          studentId: user.uid,
+          studentName,
+          chefProfilePic: chef.profilePic,
+        });
+      } else {
+        console.error('Student profile not found');
+      }
     } else {
       console.error('Chef or user data not available');
     }
