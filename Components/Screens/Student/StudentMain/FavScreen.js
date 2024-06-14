@@ -26,8 +26,10 @@ const FavScreen = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <View>
+      <Text style={styles.heading}>Favorites</Text>
       <FlatList
+        style={styles.container}
         data={favorites}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
@@ -46,6 +48,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  heading: {
+    fontSize: 25,
+    paddingVertical: 15,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center', 
   },
   flatListContainer: {
     paddingHorizontal: 20,

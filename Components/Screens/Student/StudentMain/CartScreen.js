@@ -54,8 +54,10 @@ const CartScreen = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <View>
+      <Text style={styles.heading}>Cart</Text>
       <FlatList
+        style={styles.container}
         data={cart}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
@@ -74,6 +76,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  heading: {
+    fontSize: 25,
+    paddingVertical: 15,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center', 
   },
   flatListContainer: {
     paddingHorizontal: 20,
