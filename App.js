@@ -20,6 +20,7 @@ import { AppProvider } from './Components/others/AppContext';
 import ForgotPassword from './Components/Screens/ForgotPassword';
 import OrderConfirmationScreen from './Components/Screens/OrderConfirmationScreen';
 import PaymentScreen from './Components/Screens/PaymentScreen';
+import ReviewScreen from './Components/Screens/ReviewScreen';
 
 const Stack = createStackNavigator();
 
@@ -45,6 +46,7 @@ export default function App() {
             <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false}}/>
             <Stack.Screen name="OrderConfirmationScreen" component={OrderConfirmationScreen} options={{ headerShown: false}}/>
             <Stack.Screen name="PaymentScreen" component={PaymentScreen} options={{ headerShown: false}}/>
+            <Stack.Screen name="ReviewScreen" component={ReviewScreen} options={{ headerShown: false}}/>
           </Stack.Navigator>
         </NavigationContainer>
       </AppProvider>
