@@ -11,6 +11,7 @@ import {
   StatusBar,
   Alert,
 } from "react-native";
+import OrderConfirmationScreen from "../OrderConfirmationScreen";
 import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-swiper";
 import { AppContext } from "../../others/AppContext";
@@ -173,9 +174,11 @@ const MenuDetail = ({ route, navigation }) => {
         "Info",
         "This menu is already in the cart with the selected plan."
       );
+      navigation.navigate("OrderConfirmationScreen", { menu, selectedPlan });
     } else {
       addToCart(menu, selectedPlan);
       Alert.alert("Success", "Item has been added to cart");
+      navigation.navigate("OrderConfirmationScreen", { menu, selectedPlan });
     }
   };
 

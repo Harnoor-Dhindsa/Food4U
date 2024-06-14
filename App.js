@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import Screen from './Components/Screens/Screen';
 import SelectionScreen from './Components/Screens/SelectionScreen';
 import StudentLogin from './Components/Screens/Student/StudentLogin';
@@ -17,30 +18,36 @@ import MenuList from './Components/Screens/Student/MenuList';
 import MenuDetail from './Components/Screens/Student/MenuDetail';
 import { AppProvider } from './Components/others/AppContext';
 import ForgotPassword from './Components/Screens/ForgotPassword';
+import OrderConfirmationScreen from './Components/Screens/OrderConfirmationScreen';
+import PaymentScreen from './Components/Screens/PaymentScreen';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <AppProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Screen">
-          <Stack.Screen name="Screen" component={Screen} options={{ headerShown: false}}/>
-          <Stack.Screen name="SelectionScreen" component={SelectionScreen} options={{ headerShown: false}} />
-          <Stack.Screen name="StudentLogin" component={StudentLogin} options={{ headerShown: false}}/>
-          <Stack.Screen name="StudentSignup" component={StudentSignup} options={{ headerShown: false}}/>
-          <Stack.Screen name="ChefLogin" component={ChefLogin} options={{ headerShown: false}}/>
-          <Stack.Screen name="ChefSignup" component={ChefSignup} options={{ headerShown: false}}/>
-          <Stack.Screen name="StudentHomeScreen" component={StudentHomeScreen} options={{ headerShown: false}}/>
-          <Stack.Screen name="ChefHomeScreen" component={ChefHomeScreen} options={{ headerShown: false}}/>
-          <Stack.Screen name="CreateMenu" component={CreateMenu} options={{ headerShown: false}}/>
-          <Stack.Screen name="ViewMenu" component={ViewMenu} options={{ headerShown: false}}/>
-          <Stack.Screen name="EditMenu" component={EditMenu} options={{ headerShown: false}}/>
-          <Stack.Screen name="MenuList" component={MenuList} options={{ headerShown: false}}/>
-          <Stack.Screen name="MenuDetail" component={MenuDetail} options={{ headerShown: false}}/>
-          <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false}}/>
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AppProvider>
+    <StripeProvider publishableKey="pk_test_51PRRQJAZdam9aIXzKLnkl5R6ySqzfcHk0fHHQT0QiSILEDN809XzIIOg675MmBOL5xDnYAL3adKqNAIlc2o1qsPN00cSOHeZVR">
+      <AppProvider>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Screen">
+            <Stack.Screen name="Screen" component={Screen} options={{ headerShown: false}}/>
+            <Stack.Screen name="SelectionScreen" component={SelectionScreen} options={{ headerShown: false}} />
+            <Stack.Screen name="StudentLogin" component={StudentLogin} options={{ headerShown: false}}/>
+            <Stack.Screen name="StudentSignup" component={StudentSignup} options={{ headerShown: false}}/>
+            <Stack.Screen name="ChefLogin" component={ChefLogin} options={{ headerShown: false}}/>
+            <Stack.Screen name="ChefSignup" component={ChefSignup} options={{ headerShown: false}}/>
+            <Stack.Screen name="StudentHomeScreen" component={StudentHomeScreen} options={{ headerShown: false}}/>
+            <Stack.Screen name="ChefHomeScreen" component={ChefHomeScreen} options={{ headerShown: false}}/>
+            <Stack.Screen name="CreateMenu" component={CreateMenu} options={{ headerShown: false}}/>
+            <Stack.Screen name="ViewMenu" component={ViewMenu} options={{ headerShown: false}}/>
+            <Stack.Screen name="EditMenu" component={EditMenu} options={{ headerShown: false}}/>
+            <Stack.Screen name="MenuList" component={MenuList} options={{ headerShown: false}}/>
+            <Stack.Screen name="MenuDetail" component={MenuDetail} options={{ headerShown: false}}/>
+            <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ headerShown: false}}/>
+            <Stack.Screen name="OrderConfirmationScreen" component={OrderConfirmationScreen} options={{ headerShown: false}}/>
+            <Stack.Screen name="PaymentScreen" component={PaymentScreen} options={{ headerShown: false}}/>
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AppProvider>
+    </StripeProvider>
   );
 }
