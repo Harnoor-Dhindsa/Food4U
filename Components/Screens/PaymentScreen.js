@@ -1,57 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Button, Alert, TouchableOpacity, StatusBar } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { useStripe } from '@stripe/stripe-react-native';
-import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 
 const PaymentScreen = ({ route, navigation }) => {
   const { menu, selectedPlan } = route.params;
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const [loading, setLoading] = useState(false);
+  const { confirmPayment } = useStripe();
 
-  const getPlanPrice = (plan) => {
-    switch (plan) {
-      case 'daily':
-        return menu.dailyPrice * 100; // converting to cents
-      case 'weekly':
-        return menu.weeklyPrice * 100;
-      case 'monthly':
-        return menu.monthlyPrice * 100;
-      default:
-        return 0;
-    }
-  };
+  const handlePayment = async () => {
+    try {
+      const response = await fetch('http://your-server-url/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: [{ id: 'menu', amount: 1000 }] }), // Example data
+      });
+      const { clientSecret } = await response.json();
+      const { error, paymentIntent } = await confirmPayment(clientSecret, {
+        paymentMethodType: 'Card',
+      });
 
-  const fetchPaymentSheetParams = async () => {
-    const response = await axios.post('http://localhost:3000/create-payment-intent', {
-      amount: getPlanPrice(selectedPlan),
-      currency: 'usd',
-    });
-    return response.data;
-  };
-
-  const initializePaymentSheet = async () => {
-    const { clientSecret } = await fetchPaymentSheetParams();
-
-    const { error } = await initPaymentSheet({
-      paymentIntentClientSecret: clientSecret,
-    });
-
-    if (!error) {
-      await openPaymentSheet();
-    } else {
-      Alert.alert('Error', error.message);
-    }
-  };
-
-  const openPaymentSheet = async () => {
-    const { error } = await presentPaymentSheet();
-
-    if (error) {
-      Alert.alert(`Error code: ${error.code}`, error.message);
-    } else {
-      Alert.alert('Success', 'Your order is confirmed!');
-      navigation.navigate('ReviewScreen', { menu, selectedPlan });
+      if (error) {
+        Alert.alert('Payment failed', error.message);
+      } else if (paymentIntent) {
+        Alert.alert('Payment succeeded', 'Your payment was successful!', [
+          { text: 'OK', onPress: () => navigation.navigate('ReviewScreen', { menu, selectedPlan }) },
+        ]);
+      }
+    } catch (error) {
+      Alert.alert('Payment failed', error.message);
     }
   };
 
@@ -65,20 +43,16 @@ const PaymentScreen = ({ route, navigation }) => {
         >
           <Ionicons name="chevron-back" size={24} color="#FE660F" />
         </TouchableOpacity>
-        <Text style={styles.heading}>Payment Screen</Text>
+        <Text style={styles.heading}>Payment</Text>
       </View>
       <View style={styles.contentContainer}>
-        <Text style={styles.text}>Menu: {menu.heading}</Text>
-        <Text style={styles.text}>Selected Plan: {selectedPlan}</Text>
-        <Text style={styles.text}>Price: ${getPlanPrice(selectedPlan) / 100}</Text>
-        <TouchableOpacity
-          style={styles.paymentButton}
-          onPress={initializePaymentSheet}
-          disabled={loading}
-        >
-          <Text style={styles.paymentButtonText}>Pay Now</Text>
-        </TouchableOpacity>
+        <Text style={styles.subheading}>Order Summary</Text>
+        <Text style={styles.menuDetail}>Menu: {menu.heading}</Text>
+        <Text style={styles.menuDetail}>Plan: {selectedPlan}</Text>
       </View>
+      <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
+        <Text style={styles.payButtonText}>Pay Now</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -108,23 +82,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
+    marginRight: 150,
   },
   contentContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
+    flex: 1,
   },
-  text: {
+  subheading: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#FE660F',
+  },
+  menuDetail: {
     fontSize: 16,
     marginVertical: 5,
   },
-  paymentButton: {
+  payButton: {
     backgroundColor: '#FE660F',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
+    margin: 20,
+    position: 'absolute', 
+    bottom: 20,
+    alignSelf: 'center',
+    width: '90%',
   },
-  paymentButtonText: {
+  payButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFF',

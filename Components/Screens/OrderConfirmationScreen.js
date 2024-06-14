@@ -1,30 +1,9 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  SafeAreaView,
-  StatusBar,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const OrderConfirmationScreen = ({ route, navigation }) => {
   const { menu, selectedPlan } = route.params;
-
-  const getPlanPrice = (plan) => {
-    switch (plan) {
-      case "daily":
-        return `$${menu.dailyPrice}`;
-      case "weekly":
-        return `$${menu.weeklyPrice}`;
-      case "monthly":
-        return `$${menu.monthlyPrice}`;
-      default:
-        return "";
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -39,86 +18,100 @@ const OrderConfirmationScreen = ({ route, navigation }) => {
         <Text style={styles.heading}>Order Confirmation</Text>
       </View>
       <View style={styles.contentContainer}>
-        <Text style={styles.subheading}>{menu.heading}</Text>
-        <Text style={styles.text}>Selected Plan: {selectedPlan}</Text>
-        <Text style={styles.text}>Price: {getPlanPrice(selectedPlan)}</Text>
+        <Text style={styles.subheading}>Your Selected Menu</Text>
+        <Text style={styles.menuDetail}>Menu: {menu.heading}</Text>
+        <Text style={styles.menuDetail}>Plan: {selectedPlan}</Text>
       </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("MenuDetail", { menu })}
-        >
-          <Text style={styles.buttonText}>Back to Menu</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("PaymentScreen", { menu, selectedPlan })}
-        >
-          <Text style={styles.buttonText}>Confirm Order</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={styles.confirmButton}
+        onPress={() => navigation.navigate('PaymentScreen', { menu, selectedPlan })}
+      >
+        <Text style={styles.confirmButtonText}>Confirm Order</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.backToMenuButton}
+        onPress={() => navigation.navigate('MenuDetail', { menu })}
+      >
+        <Text style={styles.backToMenuButtonText}>Back to Menu</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
-const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: '#EDF3EB',
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 15,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: '#EDF3EB',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   heading: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center', 
+    marginRight: 100,
   },
   contentContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
+    flex: 1,
   },
   subheading: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#FE660F",
-    marginBottom: 10,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#FE660F',
   },
-  text: {
+  menuDetail: {
     fontSize: 16,
     marginVertical: 5,
   },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    margin: 20,
-  },
-  button: {
-    flex: 1,
-    backgroundColor: "#FE660F",
+  confirmButton: {
+    backgroundColor: '#FE660F',
     padding: 15,
     borderRadius: 10,
-    alignItems: "center",
-    marginHorizontal: 5,
+    alignItems: 'center',
+    margin: 20,
+    position: 'absolute', // Position the button at the bottom
+    bottom: 80,
+    alignSelf: 'center', // Center the button horizontally
+    width: '90%',
   },
-  buttonText: {
+  confirmButtonText: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFF",
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  backToMenuButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    margin: 20,
+    position: 'absolute', // Position the button at the bottom
+    bottom: 20,
+    alignSelf: 'center', // Center the button horizontally
+    width: '90%',
+  },
+  backToMenuButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
   },
 });
 
