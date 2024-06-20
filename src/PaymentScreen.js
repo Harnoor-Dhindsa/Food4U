@@ -14,7 +14,7 @@ const PaymentScreen = () => {
     try {
       // Use your machine's IP address here
       const response = await axios.post(
-        "http://10.189.152.186:3000/create-payment-intent",
+        "http://10.187.254.206:3000/create-payment-intent",
         {
           amount: 1099, // the amount to charge in cents
         }
