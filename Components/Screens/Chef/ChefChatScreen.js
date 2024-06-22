@@ -1,16 +1,28 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
-import { GiftedChat, Bubble, InputToolbar, Send } from 'react-native-gifted-chat';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert } from 'react-native';
+import { GiftedChat, Bubble, InputToolbar, Send, Actions } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
-import { FIREBASE_DB, FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
+import * as ImagePicker from 'expo-image-picker';
+import { FIREBASE_DB, FIREBASE_AUTH, FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
 import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ChefChatScreen = ({ route, navigation }) => {
   const { chefId, chefName, studentId, studentName, studentProfilePic } = route.params;
   const [messages, setMessages] = useState([]);
   const user = FIREBASE_AUTH.currentUser;
+  const storage = getStorage();
 
   useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
+
     if (!chefId || !chefName || !studentId || !studentName) {
       console.error('Missing navigation parameters:', { chefId, chefName, studentId, studentName });
       alert('Missing necessary chat details.');
@@ -34,6 +46,7 @@ const ChefChatScreen = ({ route, navigation }) => {
             name: firebaseData.user.name,
             avatar: firebaseData.user.avatar, // Make sure avatar URL is set here
           },
+          image: firebaseData.image || '',
         };
 
         return data;
@@ -72,6 +85,66 @@ const ChefChatScreen = ({ route, navigation }) => {
 
     await Promise.all(writes);
   }, [chefId, studentId, chefName, user.photoURL, studentName, studentProfilePic]);
+
+  const handleImagePick = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      try {
+        const asset = result.assets[0];
+        const uploadUri = asset.uri;
+        
+        // Check if the URI starts with file:// and adjust accordingly
+        const uri = uploadUri.startsWith('file://') ? uploadUri : 'file://' + uploadUri;
+
+        const response = await fetch(uri);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const blob = await response.blob();
+        const fileName = uri.split('/').pop();
+        const storageRef = ref(storage, `images/${fileName}`);
+
+        await uploadBytes(storageRef, blob);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        const imageMessage = {
+          _id: Math.random().toString(36).substring(7),
+          createdAt: new Date(),
+          user: {
+            _id: user.uid,
+            name: user.displayName || user.email,
+            avatar: user.photoURL,
+          },
+          image: downloadURL,
+        };
+
+        onSend([imageMessage]);
+      } catch (error) {
+        console.error('Image upload error:', error);
+        Alert.alert('Error', 'Failed to upload image. Please try again.');
+      }
+    }
+  };
+
+  const renderActions = (props) => (
+    <Actions
+      {...props}
+      options={{
+        ['Send Image']: handleImagePick,
+      }}
+      icon={() => (
+        <Ionicons name="image" size={24} color="#FE660F" />
+      )}
+      onSend={(args) => console.log(args)}
+    />
+  );
 
   const renderBubble = (props) => (
     <Bubble
@@ -125,6 +198,7 @@ const ChefChatScreen = ({ route, navigation }) => {
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
         renderSend={renderSend}
+        renderActions={renderActions}
       />
     </View>
   );

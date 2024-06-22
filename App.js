@@ -21,6 +21,7 @@ import ChefChatListScreen from './Components/Screens/Chef/ChefMain/ChefChatListS
 import ChefChatScreen from './Components/Screens/Chef/ChefChatScreen';
 import StudentChatScreen from './Components/Screens/Student/StudentChatScreen';
 import StudentChatListScreen from './Components/Screens/Student/StudentMain/StudentChatListScreen';
+import CartScreen from './Components/Screens/Student/StudentMain/CartScreen';
 
 const Stack = createStackNavigator();
 
@@ -47,6 +48,7 @@ export default function App() {
           <Stack.Screen name="StudentChatListScreen" component={StudentChatListScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="ChefChatScreen" component={ChefChatScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="StudentChatScreen" component={StudentChatScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="Cart" component={CartScreen} options={{ headerShown: false }}/>
         </Stack.Navigator>
       </NavigationContainer>
     </AppProvider>

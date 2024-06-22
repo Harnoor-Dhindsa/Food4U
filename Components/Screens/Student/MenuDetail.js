@@ -175,7 +175,8 @@ const MenuDetail = ({ route, navigation }) => {
       );
     } else {
       addToCart(menu, selectedPlan);
-      Alert.alert("Success", "Item has been added to cart");
+      Alert.alert("Success", "Item has been added to cart",
+      );
     }
   };
 

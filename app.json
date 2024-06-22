@@ -1,5 +1,13 @@
 {
   "expo": {
+    "Permissions": [
+      "ACCESS_COARSE_LOCATION",
+      "INTERNET",
+      "CAMERA",
+      "CAMERA_ROLL",
+      "READ_EXTERNAL_STORAGE",
+      "WRITE_EXTERNAL_STORAGE"
+    ],
     "name": "Food4U",
     "slug": "Food4U",
     "version": "1.0.0",
@@ -18,6 +26,14 @@
       "supportsTablet": true
     },
     "android": {
+      "Permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET",
+        "CAMERA",
+        "CAMERA_ROLL",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
