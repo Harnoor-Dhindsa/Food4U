@@ -13,7 +13,7 @@ const SelectionScreen = ({navigation}) => {
 
     return (
         <ImageBackground 
-            source={require('../Images/screen2.jpg')} // Replace with your image URL
+            source={require('../Images/screen2.jpg')} 
             style={styles.background}
         >
             <View style={styles.overlay}>

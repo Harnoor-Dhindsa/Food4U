@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,43 +16,63 @@ import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-swiper";
 import { AppContext } from "../../others/AppContext";
 
-const MenuDetail = ({ route, navigation }) => {
-  const { menu } = route.params;
+const COLORS = {
+  primary: "#FE660F",
+  background: "#EDF3EB",
+  lightGrey: "#F0F0F0",
+  darkGrey: "#666",
+};
+
+const MenuDetail = ({
+  route: {
+    params: { menu },
+  },
+  navigation,
+}) => {
   const { favorites, addToFavorites, removeFromFavorites, addToCart, cart } =
     useContext(AppContext);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const isFav = favorites.some((item) => item.id === menu.id);
-    setIsFavorite(isFav);
-  }, [favorites, menu.id]);
+    if (menu) {
+      setLoading(false);
+      const isFav = favorites.some((item) => item.id === menu.id);
+      setIsFavorite(isFav);
+    }
+  }, [favorites, menu]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = useCallback(() => {
     if (isFavorite) {
       removeFromFavorites(menu);
     } else {
       addToFavorites(menu);
     }
-    setIsFavorite(!isFavorite);
-  };
+    setIsFavorite((prev) => !prev);
+  }, [isFavorite, menu, addToFavorites, removeFromFavorites]);
 
-  const handlePlanSelect = (plan) => {
+  const handlePlanSelect = useCallback((plan) => {
     setSelectedPlan(plan);
-  };
+  }, []);
 
   const getPlanPrice = (plan) => {
-    switch (plan) {
-      case "daily":
-        return `$${menu.dailyPrice}`;
-      case "weekly":
-        return `$${menu.weeklyPrice}`;
-      case "monthly":
-        return `$${menu.monthlyPrice}`;
-      default:
-        return "";
-    }
+    const price = {
+      daily: menu.dailyPrice,
+      weekly: menu.weeklyPrice,
+      monthly: menu.monthlyPrice,
+    }[plan];
+
+    return price !== undefined ? `$${price}` : "";
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   const sections = [
     { title: "Items", data: menu.items },
@@ -185,23 +205,27 @@ const MenuDetail = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
+          accessibilityLabel="Go back"
+          accessibilityHint="Navigates to the previous screen"
         >
-          <Ionicons name="chevron-back" size={24} color="#FE660F" />
+          <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
         </TouchableOpacity>
         <Text style={styles.heading}>{menu.heading}</Text>
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={toggleFavorite}
+          accessibilityLabel="Favorite"
+          accessibilityHint="Toggle favorite status"
         >
           <Ionicons
             name={isFavorite ? "heart" : "heart-outline"}
             size={24}
-            color="#FE660F"
+            color={COLORS.primary}
           />
         </TouchableOpacity>
       </View>
@@ -233,7 +257,7 @@ const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: "row",
@@ -241,13 +265,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 15,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: COLORS.background,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: COLORS.lightGrey,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -255,7 +279,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: COLORS.lightGrey,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -268,7 +292,7 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F0F0F0",
+    backgroundColor: COLORS.lightGrey,
     margin: 10,
     borderRadius: 10,
     overflow: "hidden",
@@ -277,14 +301,14 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F0F0F0",
+    backgroundColor: COLORS.lightGrey,
     margin: 10,
     borderRadius: 10,
     overflow: "hidden",
   },
   noImageText: {
     fontSize: 18,
-    color: "#666",
+    color: COLORS.darkGrey,
   },
   wrapper: {
     height: "100%",
@@ -292,7 +316,7 @@ const styles = StyleSheet.create({
   slide: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F0F0F0",
+    backgroundColor: COLORS.lightGrey,
     width: width - 20,
   },
   image: {
@@ -306,7 +330,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginVertical: 10,
-    color: "#FE660F",
+    color: COLORS.primary,
   },
   itemContainer: {
     flexDirection: "row",
@@ -332,7 +356,7 @@ const styles = StyleSheet.create({
   noDessertText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#666",
+    color: COLORS.darkGrey,
   },
   text: {
     fontSize: 16,
@@ -343,7 +367,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: "#FE660F",
+    borderColor: COLORS.primary,
     borderRadius: 10,
     alignItems: "center",
     backgroundColor: "#FFF",
@@ -362,11 +386,11 @@ const styles = StyleSheet.create({
   },
   planDescription: {
     fontSize: 14,
-    color: "#666",
+    color: COLORS.darkGrey,
     marginTop: 5,
   },
   addToCartButton: {
-    backgroundColor: "#FE660F",
+    backgroundColor: COLORS.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -379,6 +403,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#000",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

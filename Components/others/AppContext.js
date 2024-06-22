@@ -26,6 +26,21 @@ export const AppProvider = ({ children }) => {
     );
   };
 
+  const updateCart = (updatedItem) => {
+    setCart(
+      cart.map((item) =>
+        item.id === updatedItem.id &&
+        item.selectedPlan === updatedItem.selectedPlan
+          ? updatedItem
+          : item
+      )
+    );
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -35,6 +50,8 @@ export const AppProvider = ({ children }) => {
         cart,
         addToCart,
         removeFromCart,
+        updateCart,
+        clearCart,
       }}
     >
       {children}
