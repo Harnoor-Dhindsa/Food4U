@@ -14,3 +14,11 @@
 3. implementing the payment feature
 4. more CSS needed (basically for all the pages)
 5. create a filter along with the search bar for the student 
+
+#kuwar password crack:
+hint1: 8066 6391 2226
+hint2: one number repeats
+hint3: no 2,6 in the password
+
+possible numbers: 8,0,3,9,1
+failed passwords: 8039, 
