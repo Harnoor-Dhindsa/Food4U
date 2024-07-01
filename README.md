@@ -9,7 +9,8 @@
 8. location access for both the student and chef
 9. implementing the add to cart feature
 10. implementing the chat feature
-11. create a filter along with the search bar for the student 
+11. create a filter along with the search bar for the student
+12. finally done the notification in the chat box 
 
 # what needs to be done 
 1. Improve the chat feature (edit message etc.)
