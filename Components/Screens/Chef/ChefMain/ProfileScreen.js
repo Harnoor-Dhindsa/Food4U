@@ -52,7 +52,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     if (user) {
-      await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
+      const profileData = {
         firstName,
         lastName,
         email,
@@ -60,11 +60,33 @@ const ProfileScreen = ({ navigation }) => {
         gender,
         age,
         location,
-        profilePic,
-      });
-      setEditMode(false);
+      };
+  
+      try {
+        // Retrieve current expoPushToken from Firestore
+        const userRef = doc(FIREBASE_DB, 'ChefsProfiles', user.uid);
+        const userDoc = await getDoc(userRef);
+  
+        // Merge existing expoPushToken with profileData
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.expoPushToken) {
+            profileData.expoPushToken = userData.expoPushToken;
+          }
+        }
+  
+        // Update Firestore document with all profile data including expoPushToken
+        await setDoc(userRef, profileData);
+  
+        // Update local state or perform other actions
+        setEditMode(false);
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        // Handle error accordingly
+      }
     }
   };
+  
 
   const handleLogOut = () => {
     FIREBASE_AUTH.signOut()

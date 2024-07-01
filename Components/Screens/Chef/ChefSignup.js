@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { CommonActions } from '@react-navigation/native';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
 
 const ChefSignup = ({navigation}) => {
   const [FirstName, setFirstName] = useState('');
@@ -19,12 +29,15 @@ const ChefSignup = ({navigation}) => {
     try{
       const response = await createUserWithEmailAndPassword(auth, email, password);
       const user = response.user;
+
+      const expoPushToken = await registerForPushNotificationsAsync();
       
       // Save user details to Firestore
       await setDoc(doc(FIREBASE_DB, 'ChefsProfiles', user.uid), {
         firstName: FirstName,
         lastName: LastName,
-        email: email
+        email: email,
+        expoPushToken
       });
 
       console.log(response);
@@ -49,6 +62,42 @@ const ChefSignup = ({navigation}) => {
     // Navigate to the front page
     navigation.navigate('SelectionScreen');
   };
+
+  async function registerForPushNotificationsAsync() {
+    let token;
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
+        icon: "./assets/icon.png",
+      });
+    }
+
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== "granted") {
+        alert("Failed to get push token for push notification!");
+        return null;
+      }
+
+      token = (await Notifications.getExpoPushTokenAsync({
+        projectId: "49c55b76-29ca-4da9-9fb8-d598ab6051f3", // Replace with your actual project ID
+      })).data;
+      console.log(token);
+    } else {
+      alert("Must use physical device for Push Notifications");
+    }
+
+    return token;
+  }
 
   return (
     <View style={styles.container}>

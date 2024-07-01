@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -8,17 +8,17 @@ const StudentChatListScreen = ({ navigation }) => {
   const [chats, setChats] = useState([]);
   const user = FIREBASE_AUTH.currentUser;
 
-  const fetchChats = async () => {
+  useEffect(() => {
     const chatsRef = collection(FIREBASE_DB, 'Chats');
     const q = query(chatsRef, where('studentId', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-    const chatsList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setChats(chatsList);
-  };
 
-  useEffect(() => {
-    fetchChats();
-  }, []);
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const updatedChats = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setChats(updatedChats);
+    });
+
+    return () => unsubscribe();
+  }, [user.uid]);
 
   const navigateToChat = (chat) => {
     navigation.navigate('StudentChatScreen', {

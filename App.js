@@ -23,9 +23,11 @@ import StudentChatScreen from './Components/Screens/Student/StudentChatScreen';
 import StudentChatListScreen from './Components/Screens/Student/StudentMain/StudentChatListScreen';
 import CartScreen from './Components/Screens/Student/StudentMain/CartScreen';
 
+
 const Stack = createStackNavigator();
 
 export default function App() {
+
   return (
     <AppProvider>
       <NavigationContainer>

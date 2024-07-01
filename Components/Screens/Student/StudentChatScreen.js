@@ -1,18 +1,28 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, Modal, TouchableHighlight } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Send, Actions } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FIREBASE_DB, FIREBASE_AUTH, FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
 import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const StudentChatScreen = ({ route, navigation }) => {
   const { chefId, chefName, studentId, studentName, chefProfilePic } = route.params;
   const [messages, setMessages] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
   const user = FIREBASE_AUTH.currentUser;
   const storage = getStorage();
-
+  
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
@@ -62,29 +72,61 @@ const StudentChatScreen = ({ route, navigation }) => {
     const chatId = `${chefId}_${studentId}`;
     const messagesRef = collection(FIREBASE_DB, 'Chats', chatId, 'Messages');
     const writes = messages.map((m) => addDoc(messagesRef, { ...m, createdAt: Timestamp.now() }));
-
+  
+    const senderId = user.uid;
+    const recipientId = senderId === chefId ? studentId : chefId;
+  
     const chatDoc = doc(FIREBASE_DB, 'Chats', chatId);
     const chatSnap = await getDoc(chatDoc);
     if (!chatSnap.exists()) {
       await setDoc(chatDoc, {
         chefId,
         chefName,
-        chefProfilePic,
+        chefProfilePic: user.photoURL,
         studentId,
         studentName,
-        studentProfilePic: user.photoURL,
-        lastMessage: messages[0].text,
+        lastMessage: messages[0].text || 'Image',
         lastMessageAt: Timestamp.now(),
       });
     } else {
       await updateDoc(chatDoc, {
-        lastMessage: messages[0].text,
+        lastMessage: messages[0].text || 'Image',
         lastMessageAt: Timestamp.now(),
       });
     }
-
+  
     await Promise.all(writes);
-  }, [chefId, studentId, chefName, chefProfilePic, studentName, user.photoURL]);
+    sendPushNotification(recipientId, messages[0].text || 'Image', senderId);
+  }, [chefId, studentId, chefName, user.photoURL, studentName]);
+  
+  const sendPushNotification = async (recipientId, message, senderId) => {
+    const recipientDoc = await getDoc(doc(FIREBASE_DB, senderId === chefId ? 'StudentsProfiles' : 'ChefsProfiles', recipientId));
+    const token = recipientDoc.data()?.expoPushToken;
+  
+    const senderDoc = await getDoc(doc(FIREBASE_DB, senderId === chefId ? 'ChefsProfiles' : 'StudentsProfiles', senderId));
+    const senderName = senderDoc.data()?.firstName || 'Someone';
+  
+    if (token) {
+      const notificationMessage = {
+        to: token,
+        sound: 'default',
+        title: "Food4U",
+        body: `${senderName} sent you a message: ${message}`,
+        data: { message },
+      };
+  
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notificationMessage),
+      });
+    }
+  };
+  
+  
 
   const handleImagePick = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -134,16 +176,35 @@ const StudentChatScreen = ({ route, navigation }) => {
   };
 
   const renderActions = (props) => (
-    <Actions
-      {...props}
-      options={{
-        ['Send Image']: handleImagePick,
-      }}
-      icon={() => (
-        <Ionicons name="image" size={24} color="#FE660F" />
-      )}
-      onSend={(args) => console.log(args)}
-    />
+    <>
+      <Actions
+        {...props}
+        icon={() => (
+          <Ionicons name="add" size={24} color="#FE660F" />
+        )}
+        onPressActionButton={() => setModalVisible(true)}
+      />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Choose an action</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={handleImagePick}>
+              <Text style={styles.modalButtonText}>Send Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 
   const renderBubble = (props) => (
@@ -238,6 +299,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#FE660F',
+    padding: 15,
+    borderRadius: 10,
+    margin: 10,
+    width: 150,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

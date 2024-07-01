@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform, Image } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 
@@ -31,8 +31,11 @@ const ChefChatListScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.chatItem} onPress={() => navigateToChat(item)}>
-      <Text style={styles.chatItemText}>{item.studentName}</Text>
-      <Text style={styles.chatItemSubText}>{item.studentEmail}</Text>
+      <Image source={{ uri: item.studentProfilePic }} style={styles.avatar} />
+      <View style={styles.textContainer}>
+        <Text style={styles.chatItemText}>{item.studentName}</Text>
+        <Text style={styles.chatItemSubText}>{item.studentEmail}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -72,10 +75,18 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  textContainer: {
+    flex: 1,
+  },
   chatItemText: {
     fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
     color: '#333',
   },
   chatItemSubText: {
