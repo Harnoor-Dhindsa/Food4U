@@ -14,6 +14,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-swiper";
 import { AppContext } from "../../others/AppContext";
+import { FIREBASE_DB, FIREBASE_STORAGE, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { getDownloadURL, ref } from "firebase/storage";
 
 const MenuDetail = ({ route, navigation }) => {
   const { menu } = route.params;
@@ -21,11 +24,36 @@ const MenuDetail = ({ route, navigation }) => {
     useContext(AppContext);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [chefName, setChefName] = useState("");
+  const [chefProfilePic, setChefProfilePic] = useState("");
 
   useEffect(() => {
     const isFav = favorites.some((item) => item.id === menu.id);
     setIsFavorite(isFav);
   }, [favorites, menu.id]);
+
+  useEffect(() => {
+    const fetchChefData = async () => {
+      try {
+        const chefDocRef = doc(FIREBASE_DB, "ChefsProfiles", menu.chefId);
+        const chefDoc = await getDoc(chefDocRef);
+        if (chefDoc.exists()) {
+          const chefData = chefDoc.data();
+          setChefName(`${chefData.firstName} ${chefData.lastName}`);
+
+          const profilePicRef = ref(FIREBASE_STORAGE, `profilePics/${menu.chefId}`);
+          const profilePicUrl = await getDownloadURL(profilePicRef);
+          setChefProfilePic(profilePicUrl);
+        } else {
+          console.log("Chef profile not found");
+        }
+      } catch (error) {
+        console.error("Error fetching chef's data:", error);
+      }
+    };
+
+    fetchChefData();
+  }, [menu.chefId]);
 
   const toggleFavorite = () => {
     if (isFavorite) {
@@ -175,8 +203,31 @@ const MenuDetail = ({ route, navigation }) => {
       );
     } else {
       addToCart(menu, selectedPlan);
-      Alert.alert("Success", "Item has been added to cart",
+      Alert.alert("Success", "Item has been added to cart");
+    }
+  };
+
+  const navigateToChat = async () => {
+    const user = FIREBASE_AUTH.currentUser;
+    if (user) {
+      const studentDoc = await getDoc(
+        doc(FIREBASE_DB, "StudentsProfiles", user.uid)
       );
+      if (studentDoc.exists()) {
+        const studentData = studentDoc.data();
+        const studentName = `${studentData.firstName} ${studentData.lastName}`;
+        navigation.navigate("StudentChatScreen", {
+          chefId: menu.chefId,
+          chefName,
+          studentId: user.uid,
+          studentName,
+          chefProfilePic,
+        });
+      } else {
+        console.error("Student profile not found");
+      }
+    } else {
+      console.error("User data not available");
     }
   };
 
@@ -202,6 +253,19 @@ const MenuDetail = ({ route, navigation }) => {
           />
         </TouchableOpacity>
       </View>
+      <View style={styles.chefNameContainer}>
+        <Image source={{ uri: chefProfilePic }} style={styles.chefImage} />
+        <Text style={styles.chefNameText}> {chefName}</Text>
+        <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={20}
+            color="#FFF"
+            style={styles.chatIcon}
+          />
+          <Text style={styles.chatButtonText}>Chat</Text>
+        </TouchableOpacity>
+      </View>
       {renderPhotos()}
       <SectionList
         sections={sections}
@@ -218,15 +282,14 @@ const MenuDetail = ({ route, navigation }) => {
         disabled={!selectedPlan}
         onPress={handleAddToCart}
       >
-        <Text style={styles.addToCartText}>
-          Add to Cart {selectedPlan && `(${getPlanPrice(selectedPlan)})`}
+        <Text style={styles.addToCartButtonText}>
+          Add to Cart {getPlanPrice(selectedPlan)}
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
-const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -234,148 +297,157 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 15,
+    justifyContent: "space-between",
+    padding: 16,
     backgroundColor: "#EDF3EB",
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  favoriteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 8,
   },
   heading: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
-  },
-  imageContainer: {
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    margin: 10,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  noImageContainer: {
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    margin: 10,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  noImageText: {
-    fontSize: 18,
-    color: "#666",
-  },
-  wrapper: {
-    height: "100%",
-  },
-  slide: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    width: width - 20,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-  },
-  subheading: {
     fontSize: 20,
     fontWeight: "bold",
-    marginVertical: 10,
+    color: "#4A4A4A",
+  },
+  favoriteButton: {
+    padding: 8,
+  },
+  chefNameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 16,
+    paddingHorizontal: 16,
+  },
+  chefImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 8,
+  },
+  chefNameText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4A4A4A",
+    flex: 1,
+  },
+  chatButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FE660F",
+    padding: 8,
+    borderRadius: 16,
+  },
+  chatIcon: {
+    marginRight: 4,
+  },
+  chatButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  imageContainer: {
+    height: Dimensions.get("window").height * 0.3,
+  },
+  wrapper: {},
+  slide: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#9DD6EB",
+  },
+  image: {
+    width: Dimensions.get("window").width,
+    height: "100%",
+  },
+  noImageContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  noImageText: {
+    fontSize: 16,
+    color: "#4A4A4A",
+  },
+  subheading: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginVertical: 8,
+    marginLeft: 16,
     color: "#FE660F",
   },
   itemContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 5,
-    fontWeight: "bold",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   itemName: {
     fontSize: 16,
-    fontWeight: "bold",
+    color: "#4A4A4A",
   },
   itemQuantity: {
     fontSize: 16,
-    fontWeight: "bold",
+    color: "#4A4A4A",
   },
   dessertContainer: {
-    marginVertical: 5,
-    fontWeight: "bold",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   noDessertContainer: {
-    paddingVertical: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
   },
   noDessertText: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#666",
-  },
-  text: {
-    fontSize: 16,
-    marginVertical: 5,
+    color: "#4A4A4A",
   },
   planButton: {
-    padding: 15,
-    marginVertical: 10,
-    marginHorizontal: 5,
+    padding: 16,
+    margin: 8,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#FE660F",
-    borderRadius: 10,
-    alignItems: "center",
+    borderColor: "#DDD",
     backgroundColor: "#FFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
   selectedPlanButton: {
-    backgroundColor: "#FFEDD5",
+    borderColor: "#FE660F",
+    backgroundColor: "#FFF3E6",
   },
   planText: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#4A4A4A",
   },
   planDescription: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 5,
+    color: "#4A4A4A",
+  },
+  contentContainer: {
+    paddingBottom: 16,
   },
   addToCartButton: {
     backgroundColor: "#FE660F",
-    padding: 15,
-    borderRadius: 10,
+    paddingVertical: 16,
     alignItems: "center",
-    margin: 20,
+    borderRadius: 8,
+    margin: 16,
   },
   disabledAddToCartButton: {
-    backgroundColor: "#DDD",
+    backgroundColor: "#FFA860",
   },
-  addToCartText: {
-    fontSize: 18,
+  addToCartButtonText: {
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#000",
+    color: "#FFF",
+  },
+  text: {
+    fontSize: 16,
+    color: "#4A4A4A",
   },
 });
 

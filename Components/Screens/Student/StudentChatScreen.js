@@ -4,7 +4,7 @@ import { GiftedChat, Bubble, InputToolbar, Send, Actions } from 'react-native-gi
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FIREBASE_DB, FIREBASE_AUTH, FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
-import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as Notifications from 'expo-notifications';
 
@@ -125,8 +125,6 @@ const StudentChatScreen = ({ route, navigation }) => {
       });
     }
   };
-  
-  
 
   const handleImagePick = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -207,6 +205,42 @@ const StudentChatScreen = ({ route, navigation }) => {
     </>
   );
 
+  const handleLongPress = (message) => {
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteMessage(message),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const deleteMessage = async (message) => {
+    try {
+      const chatId = `${chefId}_${studentId}`;
+      const messageRef = doc(FIREBASE_DB, 'Chats', chatId, 'Messages', message._id);
+
+      await deleteDoc(messageRef);
+
+      // Update the local state to remove the message
+      setMessages((previousMessages) =>
+        previousMessages.filter((msg) => msg._id !== message._id)
+      );
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      Alert.alert('Error', 'Failed to delete message. Please try again.');
+    }
+  };
+
   const renderBubble = (props) => (
     <Bubble
       {...props}
@@ -218,6 +252,7 @@ const StudentChatScreen = ({ route, navigation }) => {
         left: { color: 'black' },
         right: { color: 'white' },
       }}
+      onLongPress={() => handleLongPress(props.currentMessage)}
     />
   );
 
