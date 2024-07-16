@@ -1,21 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
-import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../../_utils/FirebaseConfig';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import CustomModalPicker from '../../../others/CustomModalPicker';
+import React, { useState, useEffect } from "react";
+import { Linking } from "react-native";
+
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Alert,
+} from "react-native";
+import {
+  FIREBASE_AUTH,
+  FIREBASE_DB,
+  FIREBASE_STORAGE,
+} from "../../../../_utils/FirebaseConfig";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import CustomModalPicker from "../../../others/CustomModalPicker";
+import axios from "axios";
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [gender, setGender] = useState('');
-  const [age, setAge] = useState('');
-  const [location, setLocation] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [gender, setGender] = useState("");
+  const [age, setAge] = useState("");
+  const [location, setLocation] = useState("");
   const [profilePic, setProfilePic] = useState(null);
 
   const user = FIREBASE_AUTH.currentUser;
@@ -28,7 +45,7 @@ const ProfileScreen = ({ navigation }) => {
   }, [user]);
 
   const loadUserProfile = async () => {
-    const docRef = doc(FIREBASE_DB, 'ChefsProfiles', user.uid);
+    const docRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const profileData = docSnap.data();
@@ -42,7 +59,7 @@ const ProfileScreen = ({ navigation }) => {
         setProfilePic(profileData.profilePic);
       }
     } else {
-      console.log('No such document!');
+      console.log("No such document!");
     }
   };
 
@@ -60,48 +77,35 @@ const ProfileScreen = ({ navigation }) => {
         gender,
         age,
         location,
+        stripeAccountId, // Include the Stripe account ID
       };
-  
+
       try {
-        // Retrieve current expoPushToken from Firestore
-        const userRef = doc(FIREBASE_DB, 'ChefsProfiles', user.uid);
-        const userDoc = await getDoc(userRef);
-  
-        // Merge existing expoPushToken with profileData
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.expoPushToken) {
-            profileData.expoPushToken = userData.expoPushToken;
-          }
-        }
-  
-        // Update Firestore document with all profile data including expoPushToken
-        await setDoc(userRef, profileData);
-  
-        // Update local state or perform other actions
+        const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+        await setDoc(userRef, profileData, { merge: true });
         setEditMode(false);
       } catch (error) {
-        console.error('Error updating profile:', error);
-        // Handle error accordingly
+        console.error("Error updating profile:", error);
       }
     }
   };
-  
+
 
   const handleLogOut = () => {
     FIREBASE_AUTH.signOut()
       .then(() => {
-        navigation.replace('Screen');
+        navigation.replace("Screen");
       })
-      .catch(error => {
-        alert('Error in logging out');
+      .catch((error) => {
+        alert("Error in logging out");
       });
   };
 
   const handleChoosePhoto = async () => {
-    let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    let permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permissionResult.granted === false) {
-      alert('Permission to access camera roll is required!');
+      alert("Permission to access camera roll is required!");
       return;
     }
 
@@ -122,14 +126,14 @@ const ProfileScreen = ({ navigation }) => {
       const downloadURL = await getDownloadURL(storageRef);
 
       setProfilePic(downloadURL);
-      console.log('Profile pic updated:', downloadURL);
+      console.log("Profile pic updated:", downloadURL);
     }
   };
 
   const fetchLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission to access location was denied');
+    if (status !== "granted") {
+      Alert.alert("Permission to access location was denied");
       return;
     }
 
@@ -138,7 +142,7 @@ const ProfileScreen = ({ navigation }) => {
 
     let address = await Location.reverseGeocodeAsync({
       latitude,
-      longitude
+      longitude,
     });
 
     if (address.length > 0) {
@@ -154,7 +158,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const formatPhoneNumber = (text) => {
     // Remove all non-numeric characters
-    const cleaned = ('' + text).replace(/\D/g, '');
+    const cleaned = ("" + text).replace(/\D/g, "");
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     if (match) {
       return `+1 ${match[1]}-${match[2]}-${match[3]}`;
@@ -171,13 +175,68 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  const createStripeAccount = async () => {
+    try {
+      const response = await axios.post(
+        "http://192.168.1.76:3000/create-connected-account",
+        { email }
+      );
+      const { account } = response.data;
+
+      const accountLinkResponse = await axios.post(
+        "http://192.168.1.76:3000/create-account-link",
+        { account_id: account.id }
+      );
+
+      const { accountLink } = accountLinkResponse.data;
+
+      Alert.alert("Stripe Connect", "Please complete the onboarding process.", [
+        {
+          text: "Open Stripe",
+          onPress: () => Linking.openURL(accountLink.url),
+        },
+      ]);
+
+      // Save the Stripe account ID in the user's profile
+      if (user) {
+        const profileData = {
+          firstName,
+          lastName,
+          email,
+          phoneNumber,
+          gender,
+          age,
+          location,
+          stripeAccountId: account.id, // Save the Stripe account ID
+        };
+
+        const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+        await setDoc(userRef, profileData, { merge: true });
+      }
+    } catch (error) {
+      console.error("Error creating Stripe connected account:", error);
+      Alert.alert(
+        "Error",
+        "There was an error creating the Stripe connected account."
+      );
+    }
+  };
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
       <View style={styles.profileContainer}>
-        <Image key={profilePic} source={{ uri: profilePic }} style={styles.profilePhoto} />
+        <Image
+          key={profilePic}
+          source={{ uri: profilePic }}
+          style={styles.profilePhoto}
+        />
         {editMode && (
-          <TouchableOpacity style={styles.choosePhotoButton} onPress={handleChoosePhoto}>
+          <TouchableOpacity
+            style={styles.choosePhotoButton}
+            onPress={handleChoosePhoto}
+          >
             <Text style={styles.buttonText}>Choose Photo</Text>
           </TouchableOpacity>
         )}
@@ -234,8 +293,8 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.label}>Gender</Text>
             <CustomModalPicker
               options={[
-                { label: 'Male', value: 'Male' },
-                { label: 'Female', value: 'Female' },
+                { label: "Male", value: "Male" },
+                { label: "Female", value: "Female" },
               ]}
               selectedValue={gender}
               onValueChange={setGender}
@@ -249,9 +308,9 @@ const ProfileScreen = ({ navigation }) => {
               value={age}
               editable={editMode}
               onChangeText={setAge}
-              keyboardType="numeric"
               placeholder="Age"
               placeholderTextColor="#ccc"
+              keyboardType="numeric"
             />
           </View>
         </View>
@@ -266,20 +325,25 @@ const ProfileScreen = ({ navigation }) => {
             placeholderTextColor="#ccc"
           />
         </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        {editMode ? (
-          <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-            <Text style={styles.buttonText}>Save Profile</Text>
+        <View style={styles.buttonContainer}>
+          {editMode ? (
+            <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
+              <Text style={styles.buttonText}>Save Profile</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
+              <Text style={styles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.button} onPress={handleLogOut}>
+            <Text style={styles.buttonText}>Log Out</Text>
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-            <Text style={styles.buttonText}>Edit Profile</Text>
+        </View>
+        {!editMode && (
+          <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
+            <Text style={styles.buttonText}>Create Stripe Account</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.button} onPress={handleLogOut}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -288,83 +352,80 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#EDF3EB',
     padding: 20,
-    alignItems: 'center', // Center the contents
+    backgroundColor: "#EDF3EB",
   },
   profileContainer: {
-    justifyContent: 'center', // Center horizontally
-    alignItems: 'center', // Center horizontally
+    alignItems: "center",
     marginBottom: 20,
-    marginTop: 50,
   },
   profilePhoto: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: '#FE660F',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 2,
+    borderColor: "#5D3FD3",
   },
   choosePhotoButton: {
     marginTop: 10,
-    backgroundColor: '#FE660F',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    padding: 10,
+    backgroundColor: "#5D3FD3",
     borderRadius: 5,
   },
+  buttonText: {
+    color: "#FFF",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
   infoContainer: {
-    width: '100%', // Take full width
+    backgroundColor: "#FFF",
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   inputContainer: {
     flex: 1,
-    marginBottom: 15,
+    marginBottom: 10,
+    paddingRight: 5,
   },
   label: {
-    color: '#333',
-    fontWeight: 'bold',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 5,
   },
   input: {
-    height: 40,
+    backgroundColor: "#EDF3EB",
+    padding: 10,
+    borderRadius: 5,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    color: '#333',
-    backgroundColor: '#fff',
-  },
-  pickerContainer: {
-    justifyContent: 'center',
-  },
-  picker: {
-    height: 40,
-    color: '#333',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%', // Take full width
-    marginTop: 20,
-  },
-  button: {
-    backgroundColor: '#FE660F',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginHorizontal: 5,
-    flex: 1,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    borderColor: "#ccc",
+    color: "#333",
   },
   nonEditableText: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#F0F0F0",
+    color: "#999",
+  },
+  buttonContainer: {
+    marginTop: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  button: {
+    padding: 10,
+    backgroundColor: "#5D3FD3",
+    borderRadius: 5,
+    width: "48%",
   },
 });
 

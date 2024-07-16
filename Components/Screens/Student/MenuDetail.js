@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-swiper";
+import axios from "axios";
 import { AppContext } from "../../others/AppContext";
 
 const MenuDetail = ({ route, navigation }) => {
@@ -21,11 +22,38 @@ const MenuDetail = ({ route, navigation }) => {
     useContext(AppContext);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [clientSecret, setClientSecret] = useState(null);
+  const [ephemeralKey, setEphemeralKey] = useState(null);
+  const [customerId, setCustomerId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const isFav = favorites.some((item) => item.id === menu.id);
     setIsFavorite(isFav);
+    fetchPaymentIntent();
   }, [favorites, menu.id]);
+
+  const fetchPaymentIntent = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        "http://192.168.1.76:3000/create-payment-intent",
+        {
+          amount: menu.monthlyPrice * 100, // Stripe requires amount in cents
+          currency: "usd",
+          chefStripeAccountId: menu.chefStripeAccountId,
+        }
+      );
+      setClientSecret(response.data.clientSecret);
+      setEphemeralKey(response.data.ephemeralKey);
+      setCustomerId(response.data.customer);
+    } catch (error) {
+      console.error("Error fetching payment intent:", error);
+      // Handle error, show message to user
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleFavorite = () => {
     if (isFavorite) {
@@ -174,23 +202,30 @@ const MenuDetail = ({ route, navigation }) => {
         "This menu is already in the cart with the selected plan."
       );
     } else {
-      addToCart(menu, selectedPlan);
-      Alert.alert("Success", "Item has been added to cart",
-      );
+      const price = getPlanPrice(selectedPlan).slice(1); // Remove the '$' sign
+      const parsedPrice = parseFloat(price);
+      addToCart({
+        id: menu.id,
+        title: menu.title,
+        chef: menu.chef,
+        price: parsedPrice,
+        selectedPlan: selectedPlan,
+        quantity: 1,
+      });
+      navigation.navigate("Cart");
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
+      <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color="#FE660F" />
+          <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
-        <Text style={styles.heading}>{menu.heading}</Text>
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={toggleFavorite}
@@ -198,184 +233,147 @@ const MenuDetail = ({ route, navigation }) => {
           <Ionicons
             name={isFavorite ? "heart" : "heart-outline"}
             size={24}
-            color="#FE660F"
+            color="red"
           />
         </TouchableOpacity>
       </View>
-      {renderPhotos()}
-      <SectionList
-        sections={sections}
-        keyExtractor={(item, index) => item + index}
-        renderSectionHeader={renderSectionHeader}
-        renderItem={renderItem}
-        contentContainerStyle={styles.contentContainer}
-      />
-      <TouchableOpacity
-        style={[
-          styles.addToCartButton,
-          !selectedPlan && styles.disabledAddToCartButton,
-        ]}
-        disabled={!selectedPlan}
-        onPress={handleAddToCart}
-      >
-        <Text style={styles.addToCartText}>
-          Add to Cart {selectedPlan && `(${getPlanPrice(selectedPlan)})`}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <Text style={styles.heading}>{menu.title}</Text>
+        {renderPhotos()}
+        <SectionList
+          sections={sections}
+          keyExtractor={(item, index) => item + index}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+        />
+        <TouchableOpacity
+          style={styles.addToCartButton}
+          onPress={handleAddToCart}
+          disabled={!selectedPlan || loading}
+        >
+          <Text style={styles.addToCartButtonText}>
+            {loading ? "Loading..." : "Add to Cart"}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
-const { width } = Dimensions.get("window");
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 15,
-    backgroundColor: "#EDF3EB",
+    padding: 15,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 10,
   },
   favoriteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 10,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 15,
   },
   heading: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#000",
-  },
-  imageContainer: {
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    margin: 10,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  noImageContainer: {
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    margin: 10,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  noImageText: {
-    fontSize: 18,
-    color: "#666",
-  },
-  wrapper: {
-    height: "100%",
-  },
-  slide: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F0F0F0",
-    width: width - 20,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
+    marginBottom: 10,
   },
   subheading: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    marginVertical: 10,
-    color: "#FE660F",
+    marginTop: 20,
+    marginBottom: 10,
   },
   itemContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 5,
-    fontWeight: "bold",
+    alignItems: "center",
+    marginBottom: 5,
   },
   itemName: {
     fontSize: 16,
-    fontWeight: "bold",
   },
   itemQuantity: {
     fontSize: 16,
-    fontWeight: "bold",
+    color: "#777",
   },
   dessertContainer: {
-    marginVertical: 5,
-    fontWeight: "bold",
+    marginBottom: 10,
   },
   noDessertContainer: {
-    paddingVertical: 10,
+    marginTop: 10,
+    alignItems: "center",
   },
   noDessertText: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#666",
+    color: "#777",
   },
-  text: {
+  imageContainer: {
+    height: Dimensions.get("window").height * 0.35,
+    marginBottom: 10,
+  },
+  wrapper: {},
+  slide: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  noImageContainer: {
+    height: Dimensions.get("window").height * 0.35,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+  },
+  noImageText: {
     fontSize: 16,
-    marginVertical: 5,
+    color: "#777",
   },
   planButton: {
-    padding: 15,
-    marginVertical: 10,
-    marginHorizontal: 5,
+    padding: 10,
     borderWidth: 1,
-    borderColor: "#FE660F",
-    borderRadius: 10,
-    alignItems: "center",
-    backgroundColor: "#FFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    borderColor: "#ddd",
+    borderRadius: 5,
+    marginBottom: 10,
   },
   selectedPlanButton: {
-    backgroundColor: "#FFEDD5",
+    borderColor: "#007bff",
+    backgroundColor: "#007bff",
   },
   planText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
+    marginBottom: 5,
   },
   planDescription: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 5,
+    color: "#777",
   },
   addToCartButton: {
-    backgroundColor: "#FE660F",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: "#007bff",
     alignItems: "center",
-    margin: 20,
+    justifyContent: "center",
+    height: 50,
+    borderRadius: 5,
+    marginTop: 20,
   },
-  disabledAddToCartButton: {
-    backgroundColor: "#DDD",
-  },
-  addToCartText: {
+  addToCartButtonText: {
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000",
   },
 });
 

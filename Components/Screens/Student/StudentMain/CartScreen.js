@@ -1,33 +1,27 @@
-import React, { useContext } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Platform,
-} from "react-native";
-import { AppContext } from "../../../others/AppContext";
-import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { View, Text, TouchableOpacity, FlatList, Image } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
-const CartScreen = ({ navigation }) => {
-  const { cart, removeFromCart } = useContext(AppContext);
+const CartScreen = ({ route }) => {
+  const { cartItems } = route.params || { cartItems: [] }; // Default to empty array if undefined
+  const navigation = useNavigation();
 
-  const navigateToMenuDetail = (menu) => {
-    navigation.navigate("MenuDetail", { menu });
+  const handleRemoveFromCart = (item) => {
+    // Implement your logic to remove item from cart
+    console.log("Removing item from cart:", item);
   };
 
-  const handleRemoveFromCart = (menu) => {
-    removeFromCart(menu);
+  const navigateToCheckout = (item) => {
+    navigation.navigate("Checkout", { menu: item });
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.menuContainer}>
-      <TouchableOpacity
-        style={styles.menuInfo}
-        onPress={() => navigateToMenuDetail(item)}
-      >
+    <TouchableOpacity
+      style={styles.menuContainer}
+      onPress={() => navigateToCheckout(item)}
+    >
+      <View style={styles.menuInfo}>
         {item.avatars && item.avatars.length > 0 ? (
           <Image
             source={{ uri: item.avatars[0] }}
@@ -43,91 +37,84 @@ const CartScreen = ({ navigation }) => {
           </Text>
         </View>
         <Text style={styles.menuPrice}>${item.monthlyPrice}</Text>
-      </TouchableOpacity>
+      </View>
       <TouchableOpacity
         style={styles.deleteButton}
         onPress={() => handleRemoveFromCart(item)}
       >
         <Ionicons name="trash-outline" size={24} color="#FE660F" />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={cart}
-        keyExtractor={(item) => item.id.toString()}
+        data={cartItems}
         renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.flatListContainer}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+export default CartScreen;
+
+const styles = {
   container: {
     flex: 1,
-    paddingTop: Platform.OS === "ios" ? 70 : 50,
-    backgroundColor: "#EDF3EB",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    backgroundColor: "#FFFFFF",
+    padding: 10,
   },
   flatListContainer: {
-    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   menuContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: "#FFEDD5",
-    borderColor: "#FE660F",
-    borderWidth: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    marginBottom: 10,
   },
   menuInfo: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-  image: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
-  },
   infoContainer: {
+    marginLeft: 10,
     flex: 1,
   },
   menuTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 5,
   },
   menuDescription: {
     fontSize: 14,
-    color: "gray",
+    color: "#757575",
+    marginBottom: 5,
   },
   itemPlan: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
+    color: "#757575",
+    marginBottom: 5,
   },
   menuPrice: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#FE660F",
     marginLeft: 10,
   },
   deleteButton: {
-    padding: 5,
+    padding: 10,
   },
-});
-
-export default CartScreen;
+  image: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+};
