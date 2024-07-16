@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Button, SectionList, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, SectionList, Platform } from 'react-native';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
+import { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const CreateMenu = ({ route, navigation }) => {
@@ -96,6 +95,7 @@ const CreateMenu = ({ route, navigation }) => {
       Alert.alert('Error', error.message);
     }
   };
+
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
       <Text>{item.name} - {item.quantity}</Text>
@@ -110,6 +110,7 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Menu Heading',
       data: [
         <TextInput
+          key="heading"
           placeholder="Menu Heading"
           value={heading}
           onChangeText={setHeading}
@@ -120,7 +121,7 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: 'Add Item',
       data: [
-        <View style={styles.itemInputContainer}>
+        <View key="addItem" style={styles.itemInputContainer}>
           <TextInput
             placeholder="Item Name"
             value={newItemName}
@@ -152,18 +153,21 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Dessert (optional)',
       data: [
         <TextInput
+          key="dessert"
           placeholder="Dessert"
           value={dessert}
           onChangeText={setDessert}
           style={styles.input}
         />,
         <TextInput
+          key="dessertQuantity"
           placeholder="Dessert Quantity"
           value={dessertQuantity}
           onChangeText={setDessertQuantity}
           style={styles.input}
         />,
         <TextInput
+          key="dessertDays"
           placeholder="Dessert Days (e.g., Monday, Tuesday)"
           value={dessertDays}
           onChangeText={setDessertDays}
@@ -175,6 +179,7 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Available Days',
       data: [
         <TextInput
+          key="availableDays"
           placeholder="Available Days (e.g., Monday, Tuesday)"
           value={days.join(', ')}
           onChangeText={(text) => setDays(text.split(', '))}
@@ -186,18 +191,21 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Prices',
       data: [
         <TextInput
+          key="dailyPrice"
           placeholder="Daily Price"
           value={dailyPrice}
           onChangeText={setDailyPrice}
           style={styles.input}
         />,
         <TextInput
+          key="weeklyPrice"
           placeholder="Weekly Price"
           value={weeklyPrice}
           onChangeText={setWeeklyPrice}
           style={styles.input}
         />,
         <TextInput
+          key="monthlyPrice"
           placeholder="Monthly Price"
           value={monthlyPrice}
           onChangeText={setMonthlyPrice}
@@ -208,10 +216,10 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: 'Photos',
       data: [
-        <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoButton}>
+        <TouchableOpacity key="choosePhotos" onPress={handleChoosePhoto} style={styles.photoButton}>
           <Text style={styles.photoButtonText}>Choose Photos</Text>
         </TouchableOpacity>,
-        <View style={styles.imageContainer}>
+        <View key="imageContainer" style={styles.imageContainer}>
           {avatars.map((avatar, index) => (
             <View key={index} style={styles.imageWrapper}>
               <Image source={{ uri: avatar }} style={styles.image} />
@@ -226,7 +234,7 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: '',
       data: [
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
+        <TouchableOpacity key="saveMenu" style={styles.saveButton} onPress={handleSaveMenu}>
           <Text style={styles.saveButtonText}>Save Menu</Text>
         </TouchableOpacity>,
       ],
@@ -313,10 +321,6 @@ const styles = StyleSheet.create({
   imageWrapper: {
     position: 'relative',
   },
-  itemInput: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
   image: {
     width: 100,
     height: 100,
@@ -342,23 +346,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  photoButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#FE660F',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
 

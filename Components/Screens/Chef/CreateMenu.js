@@ -109,6 +109,7 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Menu Heading',
       data: [
         <TextInput
+          key="headingInput"
           placeholder="Menu Heading"
           value={heading}
           onChangeText={setHeading}
@@ -119,7 +120,7 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: 'Add Item',
       data: [
-        <View style={styles.itemInputContainer}>
+        <View key="itemInputContainer" style={styles.itemInputContainer}>
           <TextInput
             placeholder="Item Name"
             value={newItemName}
@@ -151,18 +152,21 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Dessert (optional)',
       data: [
         <TextInput
+          key="dessertInput"
           placeholder="Dessert"
           value={dessert}
           onChangeText={setDessert}
           style={styles.input}
         />,
         <TextInput
+          key="dessertQuantityInput"
           placeholder="Dessert Quantity"
           value={dessertQuantity}
           onChangeText={setDessertQuantity}
           style={styles.input}
         />,
         <TextInput
+          key="dessertDaysInput"
           placeholder="Dessert Days (e.g., Monday, Tuesday)"
           value={dessertDays}
           onChangeText={setDessertDays}
@@ -174,6 +178,7 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Available Days',
       data: [
         <TextInput
+          key="daysInput"
           placeholder="Available Days (e.g., Monday, Tuesday)"
           value={days.join(', ')}
           onChangeText={(text) => setDays(text.split(', '))}
@@ -185,18 +190,21 @@ const CreateMenu = ({ route, navigation }) => {
       title: 'Prices',
       data: [
         <TextInput
+          key="dailyPriceInput"
           placeholder="Daily Price"
           value={dailyPrice}
           onChangeText={setDailyPrice}
           style={styles.input}
         />,
         <TextInput
+          key="weeklyPriceInput"
           placeholder="Weekly Price"
           value={weeklyPrice}
           onChangeText={setWeeklyPrice}
           style={styles.input}
         />,
         <TextInput
+          key="monthlyPriceInput"
           placeholder="Monthly Price"
           value={monthlyPrice}
           onChangeText={setMonthlyPrice}
@@ -207,10 +215,10 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: 'Photos',
       data: [
-        <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoButton}>
+        <TouchableOpacity key="photoButton" onPress={handleChoosePhoto} style={styles.photoButton}>
           <Text style={styles.photoButtonText}>Choose Photos</Text>
         </TouchableOpacity>,
-        <View style={styles.imageContainer}>
+        <View key="imageContainer" style={styles.imageContainer}>
           {avatars.map((avatar, index) => (
             <Image key={index} source={{ uri: avatar }} style={styles.image} />
           ))}
@@ -220,7 +228,7 @@ const CreateMenu = ({ route, navigation }) => {
     {
       title: '',
       data: [
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
+        <TouchableOpacity key="saveButton" style={styles.saveButton} onPress={handleSaveMenu}>
           <Text style={styles.saveButtonText}>Save Menu</Text>
         </TouchableOpacity>,
       ],
@@ -251,7 +259,7 @@ const styles = StyleSheet.create({
         paddingTop: 0,
       },
       android: {
-        paddingTop: 0, // Remove unnecessary padding for Android
+        paddingTop: 0,
       },
     }),
   },
@@ -264,6 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginVertical: 10,
+    color: 'black',
   },
   input: {
     height: 40,
@@ -298,6 +307,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
   },
+  itemText: {
+    color: '#333',
+  },
   photoButton: {
     backgroundColor: '#FE660F',
     padding: 10,
@@ -314,42 +326,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingVertical: 10,
-  },
-  addButton: {
-    backgroundColor: '#FE660F',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  photoButton: {
-    backgroundColor: '#FE660F',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  photoButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#FE660F',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   image: {
     width: 100,

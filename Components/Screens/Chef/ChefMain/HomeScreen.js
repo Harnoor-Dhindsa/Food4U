@@ -1,5 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, RefreshControl, Alert, FlatList, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  RefreshControl,
+  Alert,
+  FlatList,
+  Modal
+} from 'react-native';
 import { collection, getDocs, where, query, deleteDoc, doc } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -112,18 +123,6 @@ const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
     backgroundColor: '#EDF3EB',
-  },
-  header: {
-    padding: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 3,
-    borderBottomColor: '#FE660F',
-    alignItems: 'center',
-  },
-  welcomeMessage: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FE660F',
   },
   container: {
     paddingVertical: 20,

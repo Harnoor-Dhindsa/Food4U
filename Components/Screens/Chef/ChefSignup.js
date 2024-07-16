@@ -175,10 +175,14 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 34,
     fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
   },
   subheading: {
     fontSize: 16,
     marginBottom: 20,
+    color: '#666',
+    textAlign: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -187,13 +191,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 10,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   icon: {
     marginRight: 10,
+    color: '#FE660F',
   },
   input: {
     flex: 1,
     height: 50,
+    fontSize: 16,
+    color: '#333',
   },
   eyeIcon: {
     paddingHorizontal: 10,
@@ -220,6 +232,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   buttonText: {
     color: 'black',
