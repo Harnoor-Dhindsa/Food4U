@@ -39,9 +39,6 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchChefs();
-  }, []);
-
-  useEffect(() => {
     fetchMenus();
   }, [selectedFilter]);
 
@@ -154,7 +151,8 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
-    margin: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
     paddingHorizontal: 15,
     backgroundColor: '#fff',
     shadowColor: '#000',
@@ -169,12 +167,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   filterButton: {
-    padding: 10,
-    backgroundColor: '#ccc',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#FE660F',
     borderRadius: 5,
   },
   selectedFilterButton: {
-    backgroundColor: '#FE660F',
+    backgroundColor: '#FF872E',
   },
   filterButtonText: {
     color: '#fff',
@@ -182,12 +181,13 @@ const styles = StyleSheet.create({
   },
   flatListContainer: {
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   chefContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
-    padding: 10,
+    padding: 15,
     borderRadius: 10,
     backgroundColor: '#fff',
     borderColor: '#FE660F',
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
-    padding: 10,
+    padding: 15,
     borderRadius: 10,
     backgroundColor: '#FFEDD5',
     borderColor: '#FE660F',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FE660F',
-    marginLeft: 10,
+    marginLeft: 'auto',
   },
 });
 
