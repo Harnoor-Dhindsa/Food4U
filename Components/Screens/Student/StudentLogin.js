@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: 'black',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 16,
     marginBottom: 5,
   },
   signup: {

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, Modal, TouchableHighlight } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, Modal } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Send, Actions } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,7 +22,7 @@ const StudentChatScreen = ({ route, navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const user = FIREBASE_AUTH.currentUser;
   const storage = getStorage();
-  
+
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
@@ -32,7 +32,9 @@ const StudentChatScreen = ({ route, navigation }) => {
         }
       }
     })();
+  }, []);
 
+  useEffect(() => {
     if (!chefId || !chefName || !studentId || !studentName) {
       console.error('Missing navigation parameters:', { chefId, chefName, studentId, studentName });
       alert('Missing necessary chat details.');
@@ -72,10 +74,10 @@ const StudentChatScreen = ({ route, navigation }) => {
     const chatId = `${chefId}_${studentId}`;
     const messagesRef = collection(FIREBASE_DB, 'Chats', chatId, 'Messages');
     const writes = messages.map((m) => addDoc(messagesRef, { ...m, createdAt: Timestamp.now() }));
-  
+
     const senderId = user.uid;
     const recipientId = senderId === chefId ? studentId : chefId;
-  
+
     const chatDoc = doc(FIREBASE_DB, 'Chats', chatId);
     const chatSnap = await getDoc(chatDoc);
     if (!chatSnap.exists()) {
@@ -94,18 +96,18 @@ const StudentChatScreen = ({ route, navigation }) => {
         lastMessageAt: Timestamp.now(),
       });
     }
-  
+
     await Promise.all(writes);
     sendPushNotification(recipientId, messages[0].text || 'Image', senderId);
   }, [chefId, studentId, chefName, user.photoURL, studentName]);
-  
+
   const sendPushNotification = async (recipientId, message, senderId) => {
     const recipientDoc = await getDoc(doc(FIREBASE_DB, senderId === chefId ? 'StudentsProfiles' : 'ChefsProfiles', recipientId));
     const token = recipientDoc.data()?.expoPushToken;
-  
+
     const senderDoc = await getDoc(doc(FIREBASE_DB, senderId === chefId ? 'ChefsProfiles' : 'StudentsProfiles', senderId));
     const senderName = senderDoc.data()?.firstName || 'Someone';
-  
+
     if (token) {
       const notificationMessage = {
         to: token,
@@ -114,7 +116,7 @@ const StudentChatScreen = ({ route, navigation }) => {
         body: `${senderName} sent you a message: ${message}`,
         data: { message },
       };
-  
+
       await fetch('https://exp.host/--/api/v2/push/send', {
         method: 'POST',
         headers: {
@@ -138,7 +140,7 @@ const StudentChatScreen = ({ route, navigation }) => {
       try {
         const asset = result.assets[0];
         const uploadUri = asset.uri;
-        
+
         // Check if the URI starts with file:// and adjust accordingly
         const uri = uploadUri.startsWith('file://') ? uploadUri : 'file://' + uploadUri;
 
@@ -206,22 +208,24 @@ const StudentChatScreen = ({ route, navigation }) => {
   );
 
   const handleLongPress = (message) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteMessage(message),
-        },
-      ],
-      { cancelable: true }
-    );
+    if (message.user._id === user.uid) {
+      Alert.alert(
+        'Delete Message',
+        'Are you sure you want to delete this message?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => deleteMessage(message),
+          },
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   const deleteMessage = async (message) => {
@@ -325,7 +329,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEDD5',
     borderTopWidth: 1,
     borderTopColor: '#ddd',
-    padding: 5,
+    paddingVertical: 5,
   },
   primaryInputToolbar: {
     alignItems: 'center',
@@ -362,11 +366,10 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     backgroundColor: '#FE660F',
-    padding: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     borderRadius: 10,
-    margin: 10,
-    width: 150,
-    alignItems: 'center',
+    marginVertical: 10,
   },
   modalButtonText: {
     color: 'white',

@@ -197,22 +197,24 @@ const ChefChatScreen = ({ route, navigation }) => {
   );
 
   const handleLongPress = (message) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteMessage(message),
-        },
-      ],
-      { cancelable: true }
-    );
+    if (message.user._id === user.uid) {
+      Alert.alert(
+        'Delete Message',
+        'Are you sure you want to delete this message?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => deleteMessage(message),
+          },
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   const deleteMessage = async (message) => {
