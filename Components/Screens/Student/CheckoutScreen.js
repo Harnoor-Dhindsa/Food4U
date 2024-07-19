@@ -11,6 +11,7 @@ const Checkout = () => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const [loading, setLoading] = useState(false);
+  const [paymentInitialized, setPaymentInitialized] = useState(false);
 
   useEffect(() => {
     const initializePaymentSheet = async () => {
@@ -21,19 +22,22 @@ const Checkout = () => {
 
       setLoading(true);
       try {
-        const response = await fetch("http://192.168.1.76:3000/payment-sheet", {
+        const response = await fetch("http://192.168.1.74:3000/payment-sheet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             amount: parseInt(price) * 100, // Ensure amount is in cents
-            currency: "usd",
+            currency: "cad",
             chefStripeAccountId: chefStripeAccountId,
           }),
         });
 
-        const { paymentIntent, ephemeralKey, customer } = await response.json();
+        const data = await response.json();
+        console.log("Response data:", data); // Log the response data
+
+        const { paymentIntent, ephemeralKey, customer } = data;
 
         if (!paymentIntent) {
           throw new Error("PaymentIntent is missing in the response.");
@@ -44,15 +48,20 @@ const Checkout = () => {
           ephemeralKeySecret: ephemeralKey,
           customerId: customer,
           returnURL: "your-app://return-url", // Ensure this URL is correct
+          merchantDisplayName: "Your Merchant Name", // Add your merchant display name here
         });
 
         if (initError) {
           throw new Error(initError.message);
+        } else {
+          setPaymentInitialized(true);
         }
       } catch (error) {
         console.error("Error initializing payment sheet:", error);
         setLoading(false);
         Alert.alert("Error", "Failed to initialize payment sheet.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -82,14 +91,19 @@ const Checkout = () => {
       {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <Button title="Pay" onPress={handlePayment} />
+        paymentInitialized && (
+          <>
+            <Text>Price: ${price}</Text>
+            <Button title="Pay" onPress={handlePayment} />
+          </>
+        )
       )}
     </View>
   );
 };
 
 export default () => (
-  <StripeProvider publishableKey="pk_test_51POuNq2KqukMgC6pDFLPEjJjavI8pIO2MGIJzZkvNgB0nBqKrvvCfvdFM1iNNnLVXDHVI6ciZsjmFJ5dHBTUHmRF00Ko8Gdl5i">
+  <StripeProvider publishableKey="pk_test_51POuNq2KqukMgC6pFkXCoiuutre7lxD0SiP00uRdvNFecGzQMuAX9bJsFlC3Jklgr94eOkWnp2m6GH27l3ijdSoL00DIkImryA">
     <Checkout />
   </StripeProvider>
 );

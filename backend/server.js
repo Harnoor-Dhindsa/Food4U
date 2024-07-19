@@ -8,9 +8,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Initialize Stripe with your secret key
-const stripe = Stripe(
-  "sk_test_51POuNq2KqukMgC6pDFLPEjJjavI8pIO2MGIJzZkvNgB0nBqKrvvCfvdFM1iNNnLVXDHVI6ciZsjmFJ5dHBTUHmRF00Ko8Gdl5i"
-);
+const stripe = Stripe("sk_test_51POuNq2KqukMgC6pDFLPEjJjavI8pIO2MGIJzZkvNgB0nBqKrvvCfvdFM1iNNnLVXDHVI6ciZsjmFJ5dHBTUHmRF00Ko8Gdl5i");
 
 // Endpoint to create a connected account
 app.post("/create-connected-account", async (req, res) => {
@@ -73,10 +71,7 @@ app.post("/payment-sheet", async (req, res) => {
   }
 });
 
-
-
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port http://192.168.1.76:${PORT}`);
+  console.log(`Server running on port http://192.168.1.74:${PORT}`);
 });
