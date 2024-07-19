@@ -29,7 +29,7 @@ const Checkout = () => {
           },
           body: JSON.stringify({
             amount: parseInt(price) * 100, // Ensure amount is in cents
-            currency: "cad",
+            currency: "usd",
             chefStripeAccountId: chefStripeAccountId,
           }),
         });

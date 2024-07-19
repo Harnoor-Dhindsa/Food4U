@@ -43,6 +43,9 @@ app.post("/payment-sheet", async (req, res) => {
   const { amount, currency, chefStripeAccountId } = req.body;
 
   try {
+    // Create a Stripe customer
+    const customer = await stripe.customers.create();
+
     // Create a PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -51,25 +54,35 @@ app.post("/payment-sheet", async (req, res) => {
       transfer_data: {
         destination: chefStripeAccountId,
       },
+      customer: customer.id, // Set the customer ID here
     });
 
     // Create an EphemeralKey
     const ephemeralKey = await stripe.ephemeralKeys.create(
-      { customer: paymentIntent.customer },
+      { customer: customer.id },
       { apiVersion: "2022-11-15" }
     );
+
+    // Log the generated data for debugging
+    console.log({
+      paymentIntent: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: customer.id,
+    });
 
     // Send response
     res.json({
       paymentIntent: paymentIntent.client_secret,
       ephemeralKey: ephemeralKey.secret,
-      customer: paymentIntent.customer,
+      customer: customer.id,
     });
   } catch (error) {
     console.error("Error creating PaymentIntent:", error);
     res.status(500).send({ error: error.message });
   }
 });
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
