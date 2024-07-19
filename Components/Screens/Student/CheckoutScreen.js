@@ -1,107 +1,95 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
-import { CardField, useStripe } from "@stripe/stripe-react-native";
-import axios from "axios";
+import { View, Text, Button, ActivityIndicator, Alert } from "react-native";
+import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
+import { useRoute, useNavigation } from "@react-navigation/native";
 
-const Checkout = ({ route, navigation }) => {
-  const { clientSecret, ephemeralKey, customerId } = route.params;
-  const { confirmPayment } = useStripe();
+const Checkout = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const { selectedMenu } = route.params || {};
+  const { price, chefStripeAccountId } = selectedMenu || {};
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch ephemeral key and set it
-    fetchEphemeralKey();
-  }, []);
+    const initializePaymentSheet = async () => {
+      if (!selectedMenu) {
+        Alert.alert("Error", "No menu selected");
+        return;
+      }
 
-  const fetchEphemeralKey = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("http://192.168.1.76:3000/payment-sheet", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: parseInt(price) * 100, // Ensure amount is in cents
+            currency: "usd",
+            chefStripeAccountId: chefStripeAccountId,
+          }),
+        });
+
+        const { paymentIntent, ephemeralKey, customer } = await response.json();
+
+        if (!paymentIntent) {
+          throw new Error("PaymentIntent is missing in the response.");
+        }
+
+        const { error: initError } = await initPaymentSheet({
+          paymentIntentClientSecret: paymentIntent,
+          ephemeralKeySecret: ephemeralKey,
+          customerId: customer,
+          returnURL: "your-app://return-url", // Ensure this URL is correct
+        });
+
+        if (initError) {
+          throw new Error(initError.message);
+        }
+      } catch (error) {
+        console.error("Error initializing payment sheet:", error);
+        setLoading(false);
+        Alert.alert("Error", "Failed to initialize payment sheet.");
+      }
+    };
+
+    initializePaymentSheet();
+  }, [initPaymentSheet, price, chefStripeAccountId, selectedMenu]);
+
+  const handlePayment = async () => {
+    setLoading(true);
     try {
-      await confirmPayment(clientSecret, {
-        type: "Card",
-        billingDetails: {
-          email: "customer@example.com",
-        },
-      });
+      const { error } = await presentPaymentSheet();
+      if (error) {
+        throw new Error(error.message);
+      } else {
+        Alert.alert("Success", "Payment successful!");
+        navigation.navigate("Success");
+      }
     } catch (error) {
-      console.error("Error confirming payment:", error);
-      // Handle error, show message to user
+      Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Checkout</Text>
-      <CardField
-        postalCodeEnabled={true}
-        placeholder={{
-          number: "4242 4242 4242 4242",
-        }}
-        cardStyle={{
-          backgroundColor: "#FFFFFF",
-          textColor: "#000000",
-        }}
-        style={styles.cardField}
-        onCardChange={(cardDetails) => {
-          console.log("cardDetails", cardDetails);
-        }}
-        onFocus={(focusedField) => {
-          console.log("focusField", focusedField);
-        }}
-      />
-      <TouchableOpacity
-        style={styles.payButton}
-        onPress={fetchEphemeralKey}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.payButtonText}>Pay Now</Text>
-        )}
-      </TouchableOpacity>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Text>Checkout</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <Button title="Pay" onPress={handlePayment} />
+      )}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 15,
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  cardField: {
-    width: "100%",
-    height: 50,
-    marginVertical: 10,
-  },
-  payButton: {
-    backgroundColor: "#007bff",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 50,
-    borderRadius: 5,
-    marginTop: 20,
-    width: "100%",
-  },
-  payButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-});
-
-export default Checkout;
+export default () => (
+  <StripeProvider publishableKey="pk_test_51POuNq2KqukMgC6pDFLPEjJjavI8pIO2MGIJzZkvNgB0nBqKrvvCfvdFM1iNNnLVXDHVI6ciZsjmFJ5dHBTUHmRF00Ko8Gdl5i">
+    <Checkout />
+  </StripeProvider>
+);

@@ -1,27 +1,34 @@
-import React from "react";
-import { View, Text, TouchableOpacity, FlatList, Image } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
+import React, { useContext } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from "react-native";
+import { AppContext } from "../../../others/AppContext";
+import { Ionicons } from "@expo/vector-icons";
 
-const CartScreen = ({ route }) => {
-  const { cartItems } = route.params || { cartItems: [] }; // Default to empty array if undefined
-  const navigation = useNavigation();
+const CartScreen = ({ navigation }) => {
+  const { cart, removeFromCart } = useContext(AppContext);
 
-  const handleRemoveFromCart = (item) => {
-    // Implement your logic to remove item from cart
-    console.log("Removing item from cart:", item);
+  const navigateToCheckout = (menu) => {
+    console.log("Navigating to Checkout with menu:", menu); // Debug statement
+    navigation.navigate("Checkout", { selectedMenu: menu });
   };
 
-  const navigateToCheckout = (item) => {
-    navigation.navigate("Checkout", { menu: item });
+  const handleRemoveFromCart = (menu) => {
+    removeFromCart(menu);
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.menuContainer}
-      onPress={() => navigateToCheckout(item)}
-    >
-      <View style={styles.menuInfo}>
+    <View style={styles.menuContainer}>
+      <TouchableOpacity
+        style={styles.menuInfo}
+        onPress={() => navigateToCheckout(item)}
+      >
         {item.avatars && item.avatars.length > 0 ? (
           <Image
             source={{ uri: item.avatars[0] }}
@@ -35,86 +42,90 @@ const CartScreen = ({ route }) => {
           <Text style={styles.itemPlan}>
             Selected Plan: {item.selectedPlan}
           </Text>
+          <Text style={styles.menuPrice}>${item.price}</Text>
         </View>
-        <Text style={styles.menuPrice}>${item.monthlyPrice}</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleRemoveFromCart(item)}
-      >
-        <Ionicons name="trash-outline" size={24} color="#FE660F" />
       </TouchableOpacity>
-    </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleRemoveFromCart(item)}>
+        <Ionicons name="trash" size={24} color="red" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={cartItems}
-        renderItem={renderItem}
+        data={cart}
         keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
         contentContainerStyle={styles.flatListContainer}
       />
     </View>
   );
 };
 
-export default CartScreen;
-
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    padding: 10,
+    paddingTop: Platform.OS === "ios" ? 70 : 50,
+    backgroundColor: "#EDF3EB",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
   },
   flatListContainer: {
-    paddingBottom: 20,
+    paddingHorizontal: 20,
   },
   menuContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    marginBottom: 10,
+    marginBottom: 15,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: "#FFEDD5",
+    borderColor: "#FE660F",
+    borderWidth: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   menuInfo: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-  infoContainer: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  menuDescription: {
-    fontSize: 14,
-    color: "#757575",
-    marginBottom: 5,
-  },
-  itemPlan: {
-    fontSize: 14,
-    color: "#757575",
-    marginBottom: 5,
-  },
-  menuPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
-  deleteButton: {
-    padding: 10,
-  },
   image: {
     width: 50,
     height: 50,
     borderRadius: 25,
+    marginRight: 10,
   },
-};
+  infoContainer: {
+    flex: 1,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  menuDescription: {
+    fontSize: 14,
+    color: "gray",
+  },
+  itemPlan: {
+    fontSize: 16,
+    color: "#666",
+  },
+  menuPrice: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FE660F",
+    marginLeft: 10,
+  },
+  deleteButton: {
+    padding: 5,
+  },
+});
+
+export default CartScreen;

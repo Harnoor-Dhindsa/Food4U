@@ -41,39 +41,42 @@ app.post("/create-account-link", async (req, res) => {
   }
 });
 
-// Route to handle payment intent creation
-app.post("/create-payment-intent", async (req, res) => {
+app.post("/payment-sheet", async (req, res) => {
+  const { amount, currency, chefStripeAccountId } = req.body;
+
   try {
-    const { amount, currency, chefStripeAccountId } = req.body;
-
-    const customer = await stripe.customers.create();
-    const ephemeralKey = await stripe.ephemeralKeys.create(
-      { customer: customer.id },
-      { apiVersion: "2024-04-10" }
-    );
-
+    // Create a PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: currency,
-      customer: customer.id,
-      automatic_payment_methods: { enabled: true },
-      application_fee_amount: Math.floor(amount * 0.1), // Example fee, adjust as needed
-      transfer_data: { destination: chefStripeAccountId },
+      payment_method_types: ["card"],
+      transfer_data: {
+        destination: chefStripeAccountId,
+      },
     });
 
+    // Create an EphemeralKey
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: paymentIntent.customer },
+      { apiVersion: "2022-11-15" }
+    );
+
+    // Send response
     res.json({
-      clientSecret: paymentIntent.client_secret,
+      paymentIntent: paymentIntent.client_secret,
       ephemeralKey: ephemeralKey.secret,
-      customer: customer.id,
-      publishableKey:
-        "pk_test_51POuNq2KqukMgC6pFkXCoiuutre7lxD0SiP00uRdvNFecGzQMuAX9bJsFlC3Jklgr94eOkWnp2m6GH27l3ijdSoL00DIkImryA",
+      customer: paymentIntent.customer,
     });
   } catch (error) {
+    console.error("Error creating PaymentIntent:", error);
     res.status(500).send({ error: error.message });
   }
 });
 
+
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port http://localhost:${PORT}`);
+  console.log(`Server running on port http://192.168.1.76:${PORT}`);
 });
