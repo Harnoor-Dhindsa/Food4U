@@ -185,9 +185,11 @@ const ChefChatScreen = ({ route, navigation }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Choose an action</Text>
             <TouchableOpacity style={styles.modalButton} onPress={handleImagePick}>
+              <Ionicons name="image-outline" size={20} color="white" />
               <Text style={styles.modalButtonText}>Send Image</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <Ionicons name="close-outline" size={20} color="white" />
               <Text style={styles.modalButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -352,20 +354,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#FE660F',
   },
   modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FE660F',
     padding: 15,
     borderRadius: 10,
     margin: 10,
     width: 150,
-    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
+    marginLeft: 10,
   },
 });
 
