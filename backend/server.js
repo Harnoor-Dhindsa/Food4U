@@ -8,7 +8,9 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Initialize Stripe with your secret key
-const stripe = Stripe("sk_test_51POuNq2KqukMgC6pDFLPEjJjavI8pIO2MGIJzZkvNgB0nBqKrvvCfvdFM1iNNnLVXDHVI6ciZsjmFJ5dHBTUHmRF00Ko8Gdl5i");
+const stripe = Stripe(
+  "sk_test_51POuNq2KqukMgC6pDFLPEjJjavI8pIO2MGIJzZkvNgB0nBqKrvvCfvdFM1iNNnLVXDHVI6ciZsjmFJ5dHBTUHmRF00Ko8Gdl5i"
+);
 
 // Endpoint to create a connected account
 app.post("/create-connected-account", async (req, res) => {
@@ -43,6 +45,9 @@ app.post("/payment-sheet", async (req, res) => {
   const { amount, currency, chefStripeAccountId } = req.body;
 
   try {
+    // Create a Stripe customer
+    const customer = await stripe.customers.create();
+
     // Create a PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -51,19 +56,27 @@ app.post("/payment-sheet", async (req, res) => {
       transfer_data: {
         destination: chefStripeAccountId,
       },
+      customer: customer.id, // Set the customer ID here
     });
 
     // Create an EphemeralKey
     const ephemeralKey = await stripe.ephemeralKeys.create(
-      { customer: paymentIntent.customer },
+      { customer: customer.id },
       { apiVersion: "2022-11-15" }
     );
+
+    // Log the generated data for debugging
+    console.log({
+      paymentIntent: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: customer.id,
+    });
 
     // Send response
     res.json({
       paymentIntent: paymentIntent.client_secret,
       ephemeralKey: ephemeralKey.secret,
-      customer: paymentIntent.customer,
+      customer: customer.id,
     });
   } catch (error) {
     console.error("Error creating PaymentIntent:", error);
@@ -73,5 +86,5 @@ app.post("/payment-sheet", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port http://192.168.1.74:${PORT}`);
+  console.log(`Server running on port http://192.168.1.76:${PORT}`);
 });

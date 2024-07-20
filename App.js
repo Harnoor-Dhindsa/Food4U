@@ -1,4 +1,4 @@
-import "react-native-gesture-handler";
+import "react-native-gesture-handler";//10.187.155.52, 192.168.1.76
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";

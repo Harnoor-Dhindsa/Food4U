@@ -22,17 +22,20 @@ const Checkout = () => {
 
       setLoading(true);
       try {
-        const response = await fetch("http://192.168.1.74:3000/payment-sheet", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: parseInt(price) * 100, // Ensure amount is in cents
-            currency: "cad",
-            chefStripeAccountId: chefStripeAccountId,
-          }),
-        });
+        const response = await fetch(
+          "http://10.187.155.52:3000/payment-sheet",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: parseInt(price) * 100, // Ensure amount is in cents
+              currency: "usd",
+              chefStripeAccountId: chefStripeAccountId,
+            }),
+          }
+        );
 
         const data = await response.json();
         console.log("Response data:", data); // Log the response data

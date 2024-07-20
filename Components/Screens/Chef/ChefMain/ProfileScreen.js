@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Linking } from "react-native";
-
 import {
   View,
   Text,
@@ -34,13 +33,15 @@ const ProfileScreen = ({ navigation }) => {
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const [profilePic, setProfilePic] = useState(null);
+  const [stripeAccountId, setStripeAccountId] = useState(null);
+  const [stripeAccountLink, setStripeAccountLink] = useState(null); // State for Stripe account link
 
   const user = FIREBASE_AUTH.currentUser;
 
   useEffect(() => {
     if (user) {
       loadUserProfile();
-      setEmail(user.email); // Set email to the user's email from Firebase Authentication
+      setEmail(user.email);
     }
   }, [user]);
 
@@ -57,6 +58,20 @@ const ProfileScreen = ({ navigation }) => {
       setLocation(profileData.location);
       if (profileData.profilePic) {
         setProfilePic(profileData.profilePic);
+      }
+      setStripeAccountId(profileData.stripeAccountId || null);
+
+      // Fetch Stripe account link if it exists
+      if (profileData.stripeAccountId) {
+        try {
+          const response = await axios.get(
+            "http://10.187.155.52:3000/get-remediation-link",
+            { params: { account_id: profileData.stripeAccountId } }
+          );
+          setStripeAccountLink(response.data.accountLink.url);
+        } catch (error) {
+          console.error("Error fetching Stripe account link:", error);
+        }
       }
     } else {
       console.log("No such document!");
@@ -77,7 +92,7 @@ const ProfileScreen = ({ navigation }) => {
         gender,
         age,
         location,
-        stripeAccountId, // Include the Stripe account ID
+        stripeAccountId,
       };
 
       try {
@@ -89,7 +104,6 @@ const ProfileScreen = ({ navigation }) => {
       }
     }
   };
-
 
   const handleLogOut = () => {
     FIREBASE_AUTH.signOut()
@@ -157,7 +171,6 @@ const ProfileScreen = ({ navigation }) => {
   }, []);
 
   const formatPhoneNumber = (text) => {
-    // Remove all non-numeric characters
     const cleaned = ("" + text).replace(/\D/g, "");
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     if (match) {
@@ -167,7 +180,6 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handlePhoneNumberChange = (text) => {
-    // Only format if the text is not being deleted and is defined
     if (text && text.length >= (phoneNumber ? phoneNumber.length : 0)) {
       setPhoneNumber(formatPhoneNumber(text));
     } else {
@@ -178,41 +190,40 @@ const ProfileScreen = ({ navigation }) => {
   const createStripeAccount = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.1.74:3000/create-connected-account",
+        "http://10.187.155.52:3000/create-connected-account",
         { email }
       );
       const { account } = response.data;
 
       const accountLinkResponse = await axios.post(
-        "http://192.168.1.74:3000/create-account-link",
+        "http://10.187.155.52:3000/create-account-link",
         { account_id: account.id }
       );
 
       const { accountLink } = accountLinkResponse.data;
 
-      Alert.alert("Stripe Connect", "Please complete the onboarding process.", [
-        {
-          text: "Open Stripe",
-          onPress: () => Linking.openURL(accountLink.url),
-        },
-      ]);
+      // Automatically open the Stripe onboarding link
+      Linking.openURL(accountLink.url);
 
       // Save the Stripe account ID in the user's profile
-      if (user) {
-        const profileData = {
-          firstName,
-          lastName,
-          email,
-          phoneNumber,
-          gender,
-          age,
-          location,
-          stripeAccountId: account.id, // Save the Stripe account ID
-        };
+      const updatedProfileData = {
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        gender,
+        age,
+        location,
+        stripeAccountId: account.id,
+      };
 
-        const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
-        await setDoc(userRef, profileData, { merge: true });
-      }
+      await setDoc(
+        doc(FIREBASE_DB, "ChefsProfiles", user.uid),
+        updatedProfileData,
+        { merge: true }
+      );
+      setStripeAccountId(account.id); // Update local state
+      setStripeAccountLink(accountLink.url); // Update the account link
     } catch (error) {
       console.error("Error creating Stripe connected account:", error);
       Alert.alert(
@@ -221,7 +232,6 @@ const ProfileScreen = ({ navigation }) => {
       );
     }
   };
-
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -271,7 +281,7 @@ const ProfileScreen = ({ navigation }) => {
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={email}
-            editable={false} // Make email field non-editable
+            editable={false}
             placeholder="Email"
             placeholderTextColor="#ccc"
           />
@@ -339,9 +349,17 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.buttonText}>Log Out</Text>
           </TouchableOpacity>
         </View>
-        {!editMode && (
+        {!stripeAccountId && (
           <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
             <Text style={styles.buttonText}>Create Stripe Account</Text>
+          </TouchableOpacity>
+        )}
+        {stripeAccountId && stripeAccountLink && (
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => Linking.openURL(stripeAccountLink)}
+          >
+            <Text style={styles.buttonText}>Update Stripe Account</Text>
           </TouchableOpacity>
         )}
       </View>
