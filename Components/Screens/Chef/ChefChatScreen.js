@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, M
 import { GiftedChat, Bubble, InputToolbar, Send, Actions } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { FIREBASE_DB, FIREBASE_AUTH, FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
-import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { FIREBASE_DB, FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
+import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ChefChatScreen = ({ route, navigation }) => {
@@ -63,10 +63,10 @@ const ChefChatScreen = ({ route, navigation }) => {
     const chatId = `${chefId}_${studentId}`;
     const messagesRef = collection(FIREBASE_DB, 'Chats', chatId, 'Messages');
     const writes = messages.map((m) => addDoc(messagesRef, { ...m, createdAt: Timestamp.now() }));
-  
+
     const senderId = user.uid;
     const recipientId = senderId === chefId ? studentId : chefId;
-  
+
     const chatDoc = doc(FIREBASE_DB, 'Chats', chatId);
     const chatSnap = await getDoc(chatDoc);
     if (!chatSnap.exists()) {
@@ -85,18 +85,18 @@ const ChefChatScreen = ({ route, navigation }) => {
         lastMessageAt: Timestamp.now(),
       });
     }
-  
+
     await Promise.all(writes);
     sendPushNotification(recipientId, messages[0].text || 'Image', senderId);
   }, [chefId, studentId, chefName, user.photoURL, studentName]);
-  
+
   const sendPushNotification = async (recipientId, message, senderId) => {
     const recipientDoc = await getDoc(doc(FIREBASE_DB, senderId === chefId ? 'StudentsProfiles' : 'ChefsProfiles', recipientId));
     const token = recipientDoc.data()?.expoPushToken;
-  
+
     const senderDoc = await getDoc(doc(FIREBASE_DB, senderId === chefId ? 'ChefsProfiles' : 'StudentsProfiles', senderId));
     const senderName = senderDoc.data()?.firstName || 'Someone';
-  
+
     if (token) {
       const notificationMessage = {
         to: token,
@@ -105,7 +105,7 @@ const ChefChatScreen = ({ route, navigation }) => {
         body: `${senderName} sent you a message: ${message}`,
         data: { message },
       };
-  
+
       await fetch('https://exp.host/--/api/v2/push/send', {
         method: 'POST',
         headers: {
@@ -116,8 +116,6 @@ const ChefChatScreen = ({ route, navigation }) => {
       });
     }
   };
-  
-  
 
   const handleImagePick = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -131,7 +129,7 @@ const ChefChatScreen = ({ route, navigation }) => {
       try {
         const asset = result.assets[0];
         const uploadUri = asset.uri;
-        
+
         // Check if the URI starts with file:// and adjust accordingly
         const uri = uploadUri.startsWith('file://') ? uploadUri : 'file://' + uploadUri;
 
@@ -187,9 +185,11 @@ const ChefChatScreen = ({ route, navigation }) => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Choose an action</Text>
             <TouchableOpacity style={styles.modalButton} onPress={handleImagePick}>
+              <Ionicons name="image-outline" size={20} color="white" />
               <Text style={styles.modalButtonText}>Send Image</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <Ionicons name="close-outline" size={20} color="white" />
               <Text style={styles.modalButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -197,6 +197,44 @@ const ChefChatScreen = ({ route, navigation }) => {
       </Modal>
     </>
   );
+
+  const handleLongPress = (message) => {
+    if (message.user._id === user.uid) {
+      Alert.alert(
+        'Delete Message',
+        'Are you sure you want to delete this message?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => deleteMessage(message),
+          },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
+
+  const deleteMessage = async (message) => {
+    try {
+      const chatId = `${chefId}_${studentId}`;
+      const messageRef = doc(FIREBASE_DB, 'Chats', chatId, 'Messages', message._id);
+
+      await deleteDoc(messageRef);
+
+      // Update the local state to remove the message
+      setMessages((previousMessages) =>
+        previousMessages.filter((msg) => msg._id !== message._id)
+      );
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      Alert.alert('Error', 'Failed to delete message. Please try again.');
+    }
+  };
 
   const renderBubble = (props) => (
     <Bubble
@@ -209,6 +247,7 @@ const ChefChatScreen = ({ route, navigation }) => {
         left: { color: 'black' },
         right: { color: 'white' },
       }}
+      onLongPress={() => handleLongPress(props.currentMessage)}
     />
   );
 
@@ -315,20 +354,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#FE660F',
   },
   modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FE660F',
     padding: 15,
     borderRadius: 10,
     margin: 10,
     width: 150,
-    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
+    marginLeft: 10,
   },
 });
 

@@ -1,23 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform, Image } from 'react-native';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Platform, ActivityIndicator } from 'react-native';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
+
+// Helper function to get initials from a name or return a default value
+const getInitials = (name) => {
+  if (!name) return ''; // Handle case where name is null or undefined
+  const initials = name.split(' ').map(word => word[0]).join('');
+  return initials.toUpperCase();
+};
 
 const ChefChatListScreen = ({ navigation }) => {
   const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const user = FIREBASE_AUTH.currentUser;
 
-  const fetchChats = async () => {
+  useEffect(() => {
     const chatsRef = collection(FIREBASE_DB, 'Chats');
     const q = query(chatsRef, where('chefId', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-    const chatsList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setChats(chatsList);
-  };
 
-  useEffect(() => {
-    fetchChats();
-  }, []);
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const updatedChats = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setChats(updatedChats);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user.uid]);
 
   const navigateToChat = (chat) => {
     navigation.navigate('ChefChatScreen', {
@@ -31,22 +41,44 @@ const ChefChatListScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.chatItem} onPress={() => navigateToChat(item)}>
-      <Image source={{ uri: item.studentProfilePic }} style={styles.avatar} />
+      <View style={styles.avatarContainer}>
+        {item.studentProfilePic ? (
+          <Image source={{ uri: item.studentProfilePic }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarFallback}>
+            <Text style={styles.avatarFallbackText}>{getInitials(item.studentName)}</Text>
+          </View>
+        )}
+      </View>
       <View style={styles.textContainer}>
         <Text style={styles.chatItemText}>{item.studentName}</Text>
-        <Text style={styles.chatItemSubText}>{item.studentEmail}</Text>
+        <Text style={styles.chatItemMessage}>{item.lastMessage}</Text>
       </View>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={chats}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.flatListContainer}
-      />
+      {chats.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No chats available</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={chats}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.flatListContainer}
+        />
+      )}
     </View>
   );
 };
@@ -55,31 +87,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EDF3EB',
-    paddingTop: Platform.OS === 'ios' ? 70 : 50,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
   },
   flatListContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    marginVertical: 10,
+    padding: 15,
+    backgroundColor: 'white',
     borderRadius: 10,
-    backgroundColor: '#FFEDD5',
-    borderColor: '#FE660F',
-    borderWidth: 2,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: Platform.OS === 'ios' ? 0.2 : 0.5,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: Platform.OS === 'android' ? 2 : 0,
+  },
+  avatarContainer: {
+    marginRight: 10,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 10,
+  },
+  avatarFallback: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarFallbackText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   textContainer: {
     flex: 1,
@@ -87,10 +132,24 @@ const styles = StyleSheet.create({
   chatItemText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    marginBottom: 2, // Reduced margin to bring text closer to the message
   },
-  chatItemSubText: {
+  chatItemMessage: {
     fontSize: 14,
+    color: '#666',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
     color: 'gray',
   },
 });

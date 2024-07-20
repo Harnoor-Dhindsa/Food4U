@@ -215,8 +215,6 @@ const MenuDetail = ({ route, navigation }) => {
     }
   };
 
-
-
   const navigateToChat = async () => {
     const user = FIREBASE_AUTH.currentUser;
     if (user) {
