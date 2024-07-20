@@ -14,7 +14,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-swiper";
 import { AppContext } from "../../others/AppContext";
-import { FIREBASE_DB, FIREBASE_STORAGE, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
+import {
+  FIREBASE_DB,
+  FIREBASE_STORAGE,
+  FIREBASE_AUTH,
+} from "../../../_utils/FirebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { getDownloadURL, ref } from "firebase/storage";
 
@@ -41,7 +45,10 @@ const MenuDetail = ({ route, navigation }) => {
           const chefData = chefDoc.data();
           setChefName(`${chefData.firstName} ${chefData.lastName}`);
 
-          const profilePicRef = ref(FIREBASE_STORAGE, `profilePics/${menu.chefId}`);
+          const profilePicRef = ref(
+            FIREBASE_STORAGE,
+            `profilePics/${menu.chefId}`
+          );
           const profilePicUrl = await getDownloadURL(profilePicRef);
           setChefProfilePic(profilePicUrl);
         } else {
@@ -196,6 +203,7 @@ const MenuDetail = ({ route, navigation }) => {
     const isAlreadyInCart = cart.some(
       (item) => item.id === menu.id && item.selectedPlan === selectedPlan
     );
+
     if (isAlreadyInCart) {
       Alert.alert(
         "Info",

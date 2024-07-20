@@ -14,9 +14,25 @@ export const AppProvider = ({ children }) => {
     setFavorites(favorites.filter((item) => item.id !== menu.id));
   };
 
-  const addToCart = (menu, selectedPlan) => {
-    setCart([...cart, { ...menu, selectedPlan }]);
-  };
+ const addToCart = (menu, selectedPlan) => {
+   let price = 0;
+   switch (selectedPlan) {
+     case "daily":
+       price = menu.dailyPrice;
+       break;
+     case "weekly":
+       price = menu.weeklyPrice;
+       break;
+     case "monthly":
+       price = menu.monthlyPrice;
+       break;
+     default:
+       price = 0;
+   }
+   setCart([...cart, { ...menu, selectedPlan, price }]);
+ };
+
+
 
   const removeFromCart = (menu) => {
     setCart(
