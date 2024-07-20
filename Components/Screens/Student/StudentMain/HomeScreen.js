@@ -1,23 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, TextInput, RefreshControl, Platform } from 'react-native';
+import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, TextInput, RefreshControl, Platform, Modal } from 'react-native';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
 
 const HomeScreen = ({ navigation }) => {
-  const [chefs, setChefs] = useState([]);
   const [menus, setMenus] = useState([]);
-  const [filteredChefs, setFilteredChefs] = useState([]);
   const [filteredMenus, setFilteredMenus] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState(null); // No filter selected initially
-
-  const fetchChefs = async () => {
-    const chefsCollection = collection(FIREBASE_DB, 'ChefsProfiles');
-    const chefsSnapshot = await getDocs(chefsCollection);
-    const chefsList = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(chef => chef.firstName);
-    setChefs(chefsList);
-  };
+  const [selectedFilter, setSelectedFilter] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const fetchMenus = async () => {
     try {
@@ -38,25 +31,20 @@ const HomeScreen = ({ navigation }) => {
   };
 
   useEffect(() => {
-    fetchChefs();
-  }, []);
-
-  useEffect(() => {
     fetchMenus();
   }, [selectedFilter]);
 
+  useEffect(() => {
+    filterData(searchQuery);
+  }, [menus]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([fetchChefs(), fetchMenus()]).then(() => setRefreshing(false));
+    fetchMenus().then(() => setRefreshing(false));
   }, [selectedFilter]);
 
   const filterData = (query) => {
     const lowercasedQuery = query.toLowerCase();
-
-    const filteredChefsList = chefs.filter(chef => {
-      const chefName = `${chef.firstName || ''} ${chef.lastName || ''}`.toLowerCase();
-      return chefName.includes(lowercasedQuery);
-    });
 
     const filteredMenusList = menus.filter(menu => {
       const menuHeading = menu.heading ? menu.heading.toLowerCase() : '';
@@ -64,37 +52,26 @@ const HomeScreen = ({ navigation }) => {
       return menuHeading.includes(lowercasedQuery) || itemsMatch;
     });
 
-    setFilteredChefs(filteredChefsList);
     setFilteredMenus(filteredMenusList);
   };
 
   useEffect(() => {
     filterData(searchQuery);
-  }, [searchQuery, chefs, menus]);
+  }, [searchQuery, menus]);
 
   const navigateToMenuDetail = (menu) => {
     navigation.navigate('MenuDetail', { menu });
   };
 
-  const navigateToMenuList = (chefId) => {
-    navigation.navigate('MenuList', { chefId });
-  };
-
-  const renderChefItem = ({ item }) => (
-    <TouchableOpacity style={styles.chefContainer} onPress={() => navigateToMenuList(item.id)}>
-      <Image source={{ uri: item.profilePic }} style={styles.profilePic} />
-      <View style={styles.infoContainer}>
-        <Text style={styles.name}>{item.firstName} {item.lastName}</Text>
-        <Text style={styles.email}>{item.email}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   const renderMenuItem = ({ item }) => (
     <TouchableOpacity style={styles.menuContainer} onPress={() => navigateToMenuDetail(item)}>
       {item.avatars && item.avatars.length > 0 ? (
         <Image source={{ uri: item.avatars[0] }} style={styles.image} onError={(e) => console.log(e.nativeEvent.error)} />
-      ) : null}
+      ) : (
+        <View style={styles.placeholderImage}>
+          <Ionicons name="image-outline" size={24} color="#ccc" />
+        </View>
+      )}
       <View style={styles.infoContainer}>
         <Text style={styles.menuTitle}>{item.heading}</Text>
         <Text style={styles.menuDescription}>{item.days.join(', ')}</Text>
@@ -103,42 +80,63 @@ const HomeScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const toggleModal = () => {
+    setModalVisible(!modalVisible);
+  };
+
+  const selectFilter = (filter) => {
+    setSelectedFilter(selectedFilter === filter ? null : filter);
+    toggleModal();
+  };
+
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search by chef name, menu heading, or dish..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholderTextColor="#999"
-      />
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            selectedFilter === 'newest' && styles.selectedFilterButton
-          ]}
-          onPress={() => setSelectedFilter(selectedFilter === 'newest' ? null : 'newest')}
-        >
-          <Text style={styles.filterButtonText}>Newest</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            selectedFilter === 'oldest' && styles.selectedFilterButton
-          ]}
-          onPress={() => setSelectedFilter(selectedFilter === 'oldest' ? null : 'oldest')}
-        >
-          <Text style={styles.filterButtonText}>Oldest</Text>
-        </TouchableOpacity>
+      <View style={styles.searchBarContainer}>
+        <Ionicons name="search" size={24} color="#999" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search by menu heading or dish..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
       </View>
+      <TouchableOpacity style={styles.filterButton} onPress={toggleModal}>
+        <Text style={styles.filterButtonText}>Filter</Text>
+      </TouchableOpacity>
       <FlatList
-        data={searchQuery ? (filteredMenus.length > 0 ? filteredMenus : filteredChefs) : (selectedFilter ? menus : chefs)}
-        renderItem={searchQuery ? (filteredMenus.length > 0 ? renderMenuItem : renderChefItem) : (selectedFilter ? renderMenuItem : renderChefItem)}
+        data={searchQuery ? filteredMenus : menus}
+        renderItem={renderMenuItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.flatListContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={toggleModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity 
+              onPress={() => selectFilter('newest')} 
+              style={[styles.modalOption, selectedFilter === 'newest' && styles.selectedModalOption]}
+            >
+              <Text style={[styles.modalOptionText, selectedFilter === 'newest' && styles.selectedModalOptionText]}>Newest</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => selectFilter('oldest')} 
+              style={[styles.modalOption, selectedFilter === 'oldest' && styles.selectedModalOption]}
+            >
+              <Text style={[styles.modalOptionText, selectedFilter === 'oldest' && styles.selectedModalOptionText]}>Oldest</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggleModal} style={styles.modalCancel}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -149,32 +147,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDF3EB',
     paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
-  searchBar: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    margin: 20,
-    paddingHorizontal: 15,
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginVertical: 10,
     backgroundColor: '#fff',
+    borderRadius: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 5,
   },
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
+  searchIcon: {
+    paddingLeft: 10,
+  },
+  searchBar: {
+    flex: 1,
+    height: 50,
+    paddingLeft: 10,
+    paddingRight: 10,
   },
   filterButton: {
     padding: 10,
-    backgroundColor: '#ccc',
-    borderRadius: 5,
-  },
-  selectedFilterButton: {
     backgroundColor: '#FE660F',
+    borderRadius: 25,
+    marginHorizontal: 20,
+    alignItems: 'center',
+    marginTop: 5,
+    marginBottom: 20,
   },
   filterButtonText: {
     color: '#fff',
@@ -183,45 +185,13 @@ const styles = StyleSheet.create({
   flatListContainer: {
     paddingHorizontal: 20,
   },
-  chefContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    borderColor: '#FE660F',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  profilePic: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
-  },
-  infoContainer: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  email: {
-    fontSize: 14,
-    color: 'gray',
-  },
   menuContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: '#FFEDD5',
+    backgroundColor: '#fff',
     borderColor: '#FE660F',
     borderWidth: 2,
     shadowColor: '#000',
@@ -236,19 +206,67 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 10,
   },
+  placeholderImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  infoContainer: {
+    flex: 1,
+  },
   menuTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
   },
   menuDescription: {
     fontSize: 14,
-    color: 'gray',
+    color: '#888',
   },
   menuPrice: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FE660F',
     marginLeft: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  modalOption: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  selectedModalOption: {
+    backgroundColor: '#FE660F',
+  },
+  modalOptionText: {
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  selectedModalOptionText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalCancel: {
+    paddingVertical: 15,
+  },
+  modalCancelText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: '#FE660F',
   },
 });
 

@@ -4,7 +4,7 @@ import { Platform, StyleSheet, Alert, BackHandler  } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons'; // Import Ionicons from react-native-vector-icons
 import HomeScreen from './ChefMain/HomeScreen';
 import OrderScreen from './ChefMain/OrderScreen';
-import ChatScreen from './ChefMain/ChatScreen';
+import ChefChatListScreen from './ChefMain/ChefChatListScreen';
 import ProfileScreen from './ChefMain/ProfileScreen';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -56,7 +56,7 @@ const ChefHomeScreen = () => {
         >
             <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
             <Tab.Screen name="Orders" component={OrderScreen} options={{ headerShown: false }} />
-            <Tab.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
+            <Tab.Screen name="Chat" component={ChefChatListScreen} options={{ headerShown: false }} />
             <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
         </Tab.Navigator>
     );

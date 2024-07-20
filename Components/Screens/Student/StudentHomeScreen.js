@@ -6,6 +6,7 @@ import HomeScreen from './StudentMain/HomeScreen';
 import FavScreen from './StudentMain/FavScreen';
 import CartScreen from './StudentMain/CartScreen';
 import ProfileScreen from './StudentMain/ProfileScreen';
+import StudentChatListScreen from './StudentMain/StudentChatListScreen';
 import { useFocusEffect } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
@@ -45,6 +46,8 @@ const StudentHomeScreen = ({ navigation }) => {
             iconName = 'cart';
           } else if (route.name === 'Profile') {
             iconName = 'person';
+          } else if (route.name === 'Chat') {
+            iconName = 'chatbox-ellipses';
           }
 
           return <Ionicons name={iconName} color={color} size={size} />;
@@ -57,8 +60,9 @@ const StudentHomeScreen = ({ navigation }) => {
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Favorites" component={FavScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Cart" component={CartScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Chat" component={StudentChatListScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Cart" component={CartScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 };

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView } from 'react-native';
-import { FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { CommonActions } from '@react-navigation/native'; // Import CommonActions
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 
 const StudentLogin = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -16,6 +19,7 @@ const StudentLogin = ({ navigation }) => {
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
       console.log(response);
+      await updateExpoPushToken();
 
       // Reset the navigation stack and navigate to StudentHomeScreen
       navigation.dispatch(
@@ -39,6 +43,57 @@ const StudentLogin = ({ navigation }) => {
     // Navigate to the front page
     navigation.navigate('SelectionScreen');
   };
+
+  async function registerForPushNotificationsAsync() {
+    let token;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+        icon: './assets/icon.png',
+      });
+    }
+
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') {
+        alert('Failed to get push token for push notification!');
+        return null;
+      }
+
+      token = (await Notifications.getExpoPushTokenAsync({
+        projectId: '49c55b76-29ca-4da9-9fb8-d598ab6051f3', // Replace with your actual project ID
+      })).data;
+      console.log(token);
+    } else {
+      alert('Must use physical device for Push Notifications');
+    }
+
+    return token;
+  }
+
+  async function updateExpoPushToken(){
+    try{
+      const token = await registerForPushNotificationsAsync();
+      const userUID = auth?.currentUser?.uid;
+      if(token && userUID){
+        await updateDoc(doc(FIREBASE_DB, "StudentsProfiles", userUID),{
+          expoPushToken: token,
+        });
+      }
+    } catch(error){
+      console.log("Failed to Update Expo Push Token: ", error);
+    }
+  }
+  
 
   return (
     <View style={styles.container}>
@@ -164,7 +219,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: 'black',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 16,
     marginBottom: 5,
   },
   signup: {
