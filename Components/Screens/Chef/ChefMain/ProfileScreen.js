@@ -178,13 +178,13 @@ const ProfileScreen = ({ navigation }) => {
   const createStripeAccount = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.1.74:3000/create-connected-account",
+        "http://192.168.1.76:3000/create-connected-account",
         { email }
       );
       const { account } = response.data;
 
       const accountLinkResponse = await axios.post(
-        "http://192.168.1.74:3000/create-account-link",
+        "http://192.168.1.76:3000/create-account-link",
         { account_id: account.id }
       );
 
