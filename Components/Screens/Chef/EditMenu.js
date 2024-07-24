@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Button, SectionList, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, SectionList, Platform } from 'react-native';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../../_utils/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,7 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FIREBASE_STORAGE } from '../../../_utils/FirebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const CreateMenu = ({ route, navigation }) => {
+const EditMenu = ({ route, navigation }) => {
   const { menu } = route.params || {};
   const [heading, setHeading] = useState(menu?.heading || '');
   const [items, setItems] = useState(menu?.items || []);
@@ -21,6 +21,10 @@ const CreateMenu = ({ route, navigation }) => {
   const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || '');
   const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || '');
   const [avatars, setAvatars] = useState(menu?.avatars || []);
+  const [pickup, setPickup] = useState(menu?.pickup || false);
+  const [pickupAddress, setPickupAddress] = useState(menu?.pickupAddress || '');
+  const [delivery, setDelivery] = useState(menu?.delivery || false);
+  const [deliveryDetails, setDeliveryDetails] = useState(menu?.deliveryDetails || '');
 
   useEffect(() => {
     if (typeof days === 'string') {
@@ -81,6 +85,10 @@ const CreateMenu = ({ route, navigation }) => {
       weeklyPrice,
       monthlyPrice,
       avatars,
+      pickup,
+      pickupAddress,
+      delivery,
+      deliveryDetails,
       chefId: user.uid,
     };
 
@@ -96,6 +104,7 @@ const CreateMenu = ({ route, navigation }) => {
       Alert.alert('Error', error.message);
     }
   };
+
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
       <Text>{item.name} - {item.quantity}</Text>
@@ -206,6 +215,35 @@ const CreateMenu = ({ route, navigation }) => {
       ],
     },
     {
+      title: 'Pickup and Delivery',
+      data: [
+        <View style={styles.optionContainer}>
+          <TouchableOpacity 
+            style={[styles.optionButton, pickup && styles.optionSelected]} 
+            onPress={() => setPickup(!pickup)}
+          >
+            <Text style={styles.optionText}>Pickup</Text>
+          </TouchableOpacity>
+          {pickup && (
+            <TextInput
+              placeholder="Pickup Address"
+              value={pickupAddress}
+              onChangeText={setPickupAddress}
+              style={styles.input}
+            />
+          )}
+        </View>,
+        <View style={styles.optionContainer}>
+          <TouchableOpacity 
+            style={[styles.optionButton, delivery && styles.optionSelected]} 
+            onPress={() => setDelivery(!delivery)}
+          >
+            <Text style={styles.optionText}>Delivery</Text>
+          </TouchableOpacity>
+        </View>,
+      ],
+    },
+    {
       title: 'Photos',
       data: [
         <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoButton}>
@@ -223,143 +261,121 @@ const CreateMenu = ({ route, navigation }) => {
         </View>,
       ],
     },
-    {
-      title: '',
-      data: [
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
-          <Text style={styles.saveButtonText}>Save Menu</Text>
-        </TouchableOpacity>,
-      ],
-    },
   ];
 
   return (
-    <SectionList
-      sections={sections}
-      keyExtractor={(item, index) => index.toString()}
-      renderItem={({ item, section, index }) => section.renderItem ? section.renderItem({ item, index }) : item}
-      renderSectionHeader={({ section: { title } }) => (
-        title ? <Text style={styles.label}>{title}</Text> : null
-      )}
-      contentContainerStyle={styles.container}
-    />
+    <View style={styles.container}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item, index) => item + index}
+        renderItem={({ item }) => item}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.header}>{title}</Text>
+        )}
+      />
+      <TouchableOpacity onPress={handleSaveMenu} style={styles.saveButton}>
+        <Text style={styles.saveButtonText}>Save Menu</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#EDF3EB',
-    ...Platform.select({
-      ios: {
-        paddingTop: 60,
-      },
-    }),
+    flex: 1,
+    padding: 10,
   },
-  label: {
-    fontSize: 17,
+  header: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginVertical: 5,
+    color: '#FE660F',
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
     borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
-    paddingHorizontal: 10,
+    padding: 10,
     marginVertical: 5,
-    backgroundColor: '#fff',
   },
   itemInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   itemInput: {
     flex: 1,
-    marginRight: 10,
   },
   addButton: {
     backgroundColor: '#FE660F',
     padding: 10,
     borderRadius: 5,
-    alignItems: 'center',
+    marginLeft: 10,
   },
   itemContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 5,
-    backgroundColor: '#f8f8f8',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+  },
+  optionContainer: {
+    marginBottom: 10,
+  },
+  optionButton: {
     padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
+    marginVertical: 5,
+  },
+  optionSelected: {
+    backgroundColor: '#FE660F',
+    borderColor: '#FE660F',
+  },
+  optionText: {
+    color: '#fff',
   },
   photoButton: {
     backgroundColor: '#FE660F',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
-    marginVertical: 10,
   },
   photoButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
   },
   imageContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
   },
   imageWrapper: {
     position: 'relative',
-  },
-  itemInput: {
-    flex: 1,
-    marginHorizontal: 5,
+    margin: 5,
   },
   image: {
     width: 100,
     height: 100,
     borderRadius: 5,
-    margin: 5,
   },
   deleteButton: {
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 5,
-    padding: 5,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 2,
   },
   saveButton: {
     backgroundColor: '#FE660F',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 10,
   },
   saveButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
-  },
-  photoButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#FE660F',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
 
-export default CreateMenu;
+export default EditMenu;

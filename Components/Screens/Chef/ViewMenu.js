@@ -69,6 +69,23 @@ const ViewMenu = ({ route, navigation }) => {
         </View>
       )}
 
+      <Text style={styles.subheading}>Pickup & Delivery</Text>
+      <View style={styles.optionContainer}>
+        <TouchableOpacity
+          style={[styles.optionButton, menu.pickup ? styles.selectedOption : styles.unselectedOption]}
+          disabled={!menu.pickup}
+        >
+          <Text style={styles.optionText}>Pickup</Text>
+          {menu.pickup && <Text style={styles.optionText}>Address: {menu.pickupAddress}</Text>}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.optionButton, menu.delivery ? styles.selectedOption : styles.unselectedOption]}
+          disabled={!menu.delivery}
+        >
+          <Text style={styles.optionText}>Delivery</Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditMenu', { menu })}>
         <Icon name="edit" size={24} color="#fff" />
         <Text style={styles.editButtonText}>Edit Menu</Text>
@@ -119,14 +136,12 @@ const styles = StyleSheet.create({
     color: '#FE660F',
     textAlign: 'center',
     marginBottom: 20,
-    color: 'black',
     textAlign: 'center',
   },
   subheading: {
     fontSize: 18,
     color: '#333',
     marginVertical: 10,
-    color: 'black',
     fontWeight: 'bold',
   },
   itemContainer: {
@@ -188,6 +203,29 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 5,
     margin: 5,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 8,
+  },
+  optionButton: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  selectedOption: {
+    backgroundColor: '#FE660F',
+  },
+  unselectedOption: {
+    backgroundColor: '#ddd',
+  },
+  optionText: {
+    color: 'black',
   },
   editButton: {
     flexDirection: 'row',

@@ -21,6 +21,9 @@ const CreateMenu = ({ route, navigation }) => {
   const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || '');
   const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || '');
   const [avatars, setAvatars] = useState(menu?.avatars || []);
+  const [pickup, setPickup] = useState(menu?.pickup || false);
+  const [pickupAddress, setPickupAddress] = useState(menu?.pickupAddress || '');
+  const [delivery, setDelivery] = useState(menu?.delivery || false);
 
   useEffect(() => {
     if (typeof days === 'string') {
@@ -80,6 +83,9 @@ const CreateMenu = ({ route, navigation }) => {
       chefId: user.uid,
       createdAt: menu ? menu.createdAt : new Date(),  // Set creation date if it is a new menu
       updatedAt: new Date(),  // Update date for both new and existing menus
+      pickup,
+      pickupAddress: pickup ? pickupAddress : '',
+      delivery,
     };
 
     try {
@@ -218,6 +224,34 @@ const CreateMenu = ({ route, navigation }) => {
       ],
     },
     {
+      title: 'Pickup and Delivery',
+      data: [
+        <View style={styles.optionContainer}>
+          <TouchableOpacity 
+            style={[styles.optionButton, pickup && styles.selectedOption]}
+            onPress={() => setPickup(!pickup)}
+          >
+            <Text style={styles.optionText}>Pickup</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.optionButton, delivery && styles.selectedOption]}
+            onPress={() => setDelivery(!delivery)}
+          >
+            <Text style={styles.optionText}>Delivery</Text>
+          </TouchableOpacity>
+        </View>,
+        pickup && (
+          <TextInput
+            placeholder="Pickup Address"
+            value={pickupAddress}
+            onChangeText={setPickupAddress}
+            style={styles.input}
+          />
+        ),
+      ],
+      renderItem: ({ item }) => (item ? item : null),
+    },
+    {
       title: '',
       data: [
         <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
@@ -228,82 +262,67 @@ const CreateMenu = ({ route, navigation }) => {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.container}>
       <SectionList
         sections={sections}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, section, index }) => section.renderItem ? section.renderItem({ item, index }) : item}
+        renderItem={({ item }) => <View style={styles.item}>{item}</View>}
         renderSectionHeader={({ section: { title } }) => (
-          title ? <Text style={styles.label}>{title}</Text> : null
+          title ? <Text style={styles.sectionHeader}>{title}</Text> : null
         )}
-        contentContainerStyle={styles.container}
       />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#EDF3EB',
-    ...Platform.select({
-      ios: {
-        paddingTop: 0,
-      },
-      android: {
-        paddingTop: 0, // Remove unnecessary padding for Android
-      },
-    }),
-  },
   container: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#EDF3EB',
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
   },
-  label: {
-    fontSize: 16,
+  sectionHeader: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginVertical: 8,
   },
   input: {
     height: 40,
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginVertical: 5,
-    backgroundColor: '#fff',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    marginVertical: 8,
   },
   itemInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 8,
   },
   itemInput: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 8,
   },
   addButton: {
     backgroundColor: '#FE660F',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
+    borderRadius: 4,
+    padding: 8,
   },
   itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 5,
-    backgroundColor: '#f8f8f8',
-    padding: 10,
-    borderRadius: 5,
+    padding: 8,
+    backgroundColor: '#f9f9f9',
+    marginVertical: 4,
+    borderRadius: 4,
   },
   photoButton: {
     backgroundColor: '#FE660F',
+    borderRadius: 4,
     padding: 10,
-    borderRadius: 5,
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
   },
   photoButtonText: {
     color: '#fff',
@@ -312,57 +331,39 @@ const styles = StyleSheet.create({
   imageContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  addButton: {
-    backgroundColor: '#FE660F',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  photoButton: {
-    backgroundColor: '#FE660F',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  photoButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#FE660F',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginVertical: 8,
   },
   image: {
     width: 100,
     height: 100,
-    borderRadius: 5,
-    margin: 5,
+    margin: 4,
+  },
+  optionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 8,
+  },
+  optionButton: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  selectedOption: {
+    backgroundColor: '#FE660F',
+  },
+  optionText: {
+    color: '#000',
   },
   saveButton: {
     backgroundColor: '#FE660F',
-    padding: 15,
-    borderRadius: 5,
+    borderRadius: 4,
+    padding: 16,
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 8,
   },
   saveButtonText: {
     color: '#fff',

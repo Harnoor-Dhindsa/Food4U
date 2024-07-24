@@ -239,6 +239,19 @@ const MenuDetail = ({ route, navigation }) => {
     }
   };
 
+  const getAvailabilityMessage = () => {
+    const { pickup, delivery } = menu;
+    if (pickup && delivery) {
+      return "*Both pickup and delivery are available for this menu.";
+    } else if (pickup) {
+      return "*Only pickup is available for this menu.";
+    } else if (delivery) {
+      return "*Only delivery is available for this menu.";
+    } else {
+      return "*Neither pickup nor delivery is available for this menu.";
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
@@ -282,6 +295,7 @@ const MenuDetail = ({ route, navigation }) => {
         renderItem={renderItem}
         contentContainerStyle={styles.contentContainer}
       />
+      <Text style={styles.pickupanddev}>{getAvailabilityMessage()}</Text>
       <TouchableOpacity
         style={[
           styles.addToCartButton,
@@ -456,6 +470,11 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
     color: "#4A4A4A",
+  },
+  pickupanddev: {
+    fontSize: 16,
+    color: "#4A4A4A",
+    textAlign: "center",
   },
 });
 
