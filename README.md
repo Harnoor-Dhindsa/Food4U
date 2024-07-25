@@ -10,11 +10,11 @@
 9. implementing the add to cart feature
 10. implementing the chat feature
 11. create a filter along with the search bar for the student
-12. finally done the notification in the chat box 
+12. finally done the notification in the chat box
+13. Improve the chat feature (edit message etc.)
+14. implementing the payment feature
+15. create a filter along with the search bar for the student
 
 # what needs to be done 
-1. Improve the chat feature (edit message etc.)
-2. implementing the payment feature
 3. more CSS needed (basically for all the pages)
-4. create a filter along with the search bar for the student
 5. need to create a reviews so that student can filter according to the top menus 
