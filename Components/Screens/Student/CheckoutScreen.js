@@ -15,13 +15,16 @@ import { AppContext } from "../../others/AppContext";
 import { Ionicons } from "@expo/vector-icons";
 import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../../_utils/FirebaseConfig";
+import { doc, setDoc, getDoc, addDoc, collection } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const Checkout = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { selectedMenu } = route.params || {};
   const { cart, removeFromCart } = useContext(AppContext);
-  const { price, chefStripeAccountId, pickupAddress, delivery } = selectedMenu || {};
+  const { price, chefStripeAccountId, pickupAddress, delivery, chefId, heading, days } = selectedMenu || {};
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const [chosenPlan, setChosenPlan] = useState("");
@@ -97,7 +100,35 @@ const Checkout = () => {
         throw new Error(error.message);
       } else {
         Alert.alert("Success", "Payment successful!");
-        navigation.goBack();
+  
+        const user = FIREBASE_AUTH.currentUser;
+        if (user) {
+          const { uid, displayName, email } = user;
+  
+          // Assuming firstName and lastName are stored as custom claims or in the Firestore user document
+          const userDoc = await getDoc(doc(FIREBASE_DB, "StudentsProfiles", uid));
+          const { firstName, lastName } = userDoc.data() || {};
+  
+          if (!firstName || !lastName) {
+            throw new Error("User's first name or last name is missing.");
+          }
+  
+          await addDoc(collection(FIREBASE_DB, "orders"), {
+            days,
+            heading,
+            chefId,
+            firstName,
+            lastName,
+            chosenPlan,
+            totalPrice,
+            selectedOption,
+            deliveryDetails: selectedOption === "delivery" ? deliveryDetails : pickupAddress,
+            email,
+            createdAt: new Date(),
+          });
+  
+          navigation.goBack();
+        }
       }
     } catch (error) {
       Alert.alert("Error", error.message);
@@ -105,6 +136,7 @@ const Checkout = () => {
       setLoading(false);
     }
   };
+  
 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
@@ -150,7 +182,7 @@ const Checkout = () => {
         contentContainerStyle={styles.flatListContainer}
       />
       <View style={styles.deliveryOptionsContainer}>
-      <Text style={styles.deliveryOptionsTitle}>Delivery Options</Text>
+        <Text style={styles.deliveryOptionsTitle}>Delivery Options</Text>
         {pickupAddress && (
           <TouchableOpacity
             style={[styles.optionButton, selectedOption === "pickup" && styles.selectedOptionButton]}
@@ -193,6 +225,7 @@ const Checkout = () => {
             <TouchableOpacity
               style={styles.placeOrderButton}
               onPress={handlePayment}
+              disabled={selectedOption === "delivery" && !deliveryDetails}
             >
               <Text style={styles.placeOrderButtonText}>Place Order</Text>
             </TouchableOpacity>
@@ -263,75 +296,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#4A4A4A",
-    marginVertical: 16,
-    marginHorizontal: 16,
-  },
-  placeOrderButton: {
-    backgroundColor: "#FE660F",
-    borderRadius: 8,
-    padding: 16,
-    marginHorizontal: 16,
-  },
-  placeOrderButtonText: {
-    color: "#FFF",
     textAlign: "center",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  flatListContainer: {
-    paddingBottom: 16,
-  },
-  footer: {
-    padding: 16,
-    backgroundColor: "#EDF3EB",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    marginVertical: 16,
   },
   deliveryOptionsContainer: {
-    marginVertical: 100,
-    marginHorizontal: 16,
-  },
-  deliveryOptionsTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#4A4A4A",
-  },
-  optionButton: {
     padding: 16,
+    backgroundColor: "#FFF",
+    marginHorizontal: 16,
+    marginVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#DDD",
-    backgroundColor: "#FFF",
+  },
+  deliveryOptionsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4A4A4A",
     marginBottom: 8,
+  },
+  optionButton: {
+    padding: 12,
+    marginVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    alignItems: "center",
+    backgroundColor: "#FFF",
   },
   selectedOptionButton: {
     borderColor: "#FE660F",
-    backgroundColor: "#FE660F",
+    backgroundColor: "#FFE5D1",
   },
   optionText: {
     fontSize: 16,
     color: "#4A4A4A",
-    textAlign: "center",
   },
   addressContainer: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginTop: 16,
   },
   addressLabel: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 8,
     color: "#4A4A4A",
+    marginBottom: 8,
   },
   addressText: {
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#FFF",
     fontSize: 16,
     color: "#4A4A4A",
   },
@@ -340,8 +349,23 @@ const styles = StyleSheet.create({
     borderColor: "#DDD",
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "#FFF",
     fontSize: 16,
+    color: "#4A4A4A",
+  },
+  footer: {
+    padding: 16,
+    backgroundColor: "#FFF",
+  },
+  placeOrderButton: {
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: "#FE660F",
+    alignItems: "center",
+  },
+  placeOrderButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
   },
 });
 
