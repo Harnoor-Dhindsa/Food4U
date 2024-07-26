@@ -53,6 +53,7 @@ const ProfileScreen = ({ navigation }) => {
   const handleSaveProfile = async () => {
     if (user) {
       const profileData = {
+        profilePic,
         firstName,
         lastName,
         email,

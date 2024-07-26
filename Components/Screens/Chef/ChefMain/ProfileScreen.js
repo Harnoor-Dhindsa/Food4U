@@ -70,14 +70,14 @@ const ProfileScreen = ({ navigation }) => {
   const handleSaveProfile = async () => {
     if (user) {
       const profileData = {
+        profilePic,
         firstName,
         lastName,
         email,
         phoneNumber,
         gender,
         age,
-        location,
-        stripeAccountId, // Include the Stripe account ID
+        location,// Include the Stripe account ID
       };
 
       try {
@@ -200,6 +200,7 @@ const ProfileScreen = ({ navigation }) => {
       // Save the Stripe account ID in the user's profile
       if (user) {
         const profileData = {
+          profilePic,
           firstName,
           lastName,
           email,
