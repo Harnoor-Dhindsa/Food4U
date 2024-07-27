@@ -44,13 +44,22 @@ const MenuDetail = ({ route, navigation }) => {
         if (chefDoc.exists()) {
           const chefData = chefDoc.data();
           setChefName(`${chefData.firstName} ${chefData.lastName}`);
-
-          const profilePicRef = ref(
-            FIREBASE_STORAGE,
-            `profilePics/${menu.chefId}`
-          );
-          const profilePicUrl = await getDownloadURL(profilePicRef);
-          setChefProfilePic(profilePicUrl);
+  
+          try {
+            const profilePicRef = ref(
+              FIREBASE_STORAGE,
+              `profilePics/${menu.chefId}`
+            );
+            const profilePicUrl = await getDownloadURL(profilePicRef);
+            setChefProfilePic(profilePicUrl);
+          } catch (error) {
+            if (error.code === 'storage/object-not-found') {
+              console.log("Chef profile picture not found, setting default image");
+              setChefProfilePic('../../Images/dp.jpg'); // Set the URL to your default image here
+            } else {
+              console.error("Error fetching profile picture:", error);
+            }
+          }
         } else {
           console.log("Chef profile not found");
         }
@@ -58,9 +67,10 @@ const MenuDetail = ({ route, navigation }) => {
         console.error("Error fetching chef's data:", error);
       }
     };
-
+  
     fetchChefData();
   }, [menu.chefId]);
+  
 
   const toggleFavorite = () => {
     if (isFavorite) {
@@ -184,7 +194,13 @@ const MenuDetail = ({ route, navigation }) => {
           <Swiper style={styles.wrapper} showsButtons={true} loop={false}>
             {menu.avatars.map((uri, index) => (
               <View key={index} style={styles.slide}>
-                <Image source={{ uri: uri }} style={styles.image} />
+                {uri ? (
+                  <Image source={{ uri: uri }} style={styles.image} />
+                ) : (
+                  <View style={styles.noImageContainer}>
+                    <Text style={styles.noImageText}>Image not available</Text>
+                  </View>
+                )}
               </View>
             ))}
           </Swiper>
@@ -198,6 +214,7 @@ const MenuDetail = ({ route, navigation }) => {
       );
     }
   };
+  
 
   const handleAddToCart = () => {
     const isAlreadyInCart = cart.some(
@@ -275,18 +292,25 @@ const MenuDetail = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
       <View style={styles.chefNameContainer}>
-        <Image source={{ uri: chefProfilePic }} style={styles.chefImage} />
-        <Text style={styles.chefNameText}> {chefName}</Text>
-        <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={20}
-            color="#FFF"
-            style={styles.chatIcon}
-          />
-          <Text style={styles.chatButtonText}>Chat</Text>
-        </TouchableOpacity>
-      </View>
+  {chefProfilePic ? (
+    <Image source={{ uri: chefProfilePic }} style={styles.chefImage} />
+  ) : (
+    <View style={styles.noImageContainer}>
+      <Text style={styles.noImageText}></Text>
+    </View>
+  )}
+  <Text style={styles.chefNameText}>{chefName}</Text>
+  <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
+    <Ionicons
+      name="chatbubble-ellipses-outline"
+      size={20}
+      color="#FFF"
+      style={styles.chatIcon}
+    />
+    <Text style={styles.chatButtonText}>Chat</Text>
+  </TouchableOpacity>
+</View>
+
       {renderPhotos()}
       <SectionList
         sections={sections}
