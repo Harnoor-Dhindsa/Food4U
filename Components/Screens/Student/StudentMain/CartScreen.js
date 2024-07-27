@@ -15,7 +15,7 @@ const CartScreen = ({ navigation }) => {
   const { cart, removeFromCart } = useContext(AppContext);
 
   const navigateToCheckout = (menu) => {
-    console.log("Navigating to Checkout with menu:", menu); // Debug statement
+    console.log("Navigating to Checkout with menu:", menu);
     navigation.navigate("Checkout", { selectedMenu: menu });
   };
 

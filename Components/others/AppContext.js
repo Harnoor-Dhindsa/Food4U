@@ -1,16 +1,16 @@
 import React, { createContext, useState, useEffect } from "react";
-import { FIREBASE_AUTH, FIREBASE_DB } from "../../_utils/FirebaseConfig"; // Make sure the path to firebase config file is correct
+import { FIREBASE_AUTH, FIREBASE_DB } from "../../_utils/FirebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
   const [cart, setCart] = useState([]);
-  const [studentData, setStudentData] = useState(null); // State to store student data
+  const [studentData, setStudentData] = useState(null);
+  const [user, setUser] = useState(null);
 
-  // Function to fetch student data from Firestore
   const fetchStudentData = async (studentId) => {
     try {
       const studentDoc = await getDoc(doc(FIREBASE_DB, "StudentsProfiles", studentId));
@@ -24,51 +24,126 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Monitor authentication state and fetch student data upon login
+  const initializeFavorites = async (userId) => {
+    const userFavoritesRef = doc(FIREBASE_DB, 'Favorites', userId);
+    const docSnap = await getDoc(userFavoritesRef);
+    if (!docSnap.exists()) {
+      await setDoc(userFavoritesRef, { favorites: [] });
+    }
+  };
+
+  const initializeCart = async (userId) => {
+    const userCartRef = doc(FIREBASE_DB, 'Carts', userId);
+    const docSnap = await getDoc(userCartRef);
+    if (!docSnap.exists()) {
+      await setDoc(userCartRef, { cart: [] });
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, async (user) => {
       if (user) {
-        fetchStudentData(user.uid); // Fetch student data using the user's uid
+        setUser(user);
+        await initializeFavorites(user.uid);
+        await initializeCart(user.uid);
+        fetchStudentData(user.uid);
       } else {
+        setUser(null);
         setStudentData(null);
+        setFavorites([]);
+        setCart([]);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  const addToFavorites = (menu) => {
-    setFavorites([...favorites, menu]);
-  };
+  useEffect(() => {
+    if (user) {
+      const fetchFavorites = async () => {
+        const userFavoritesRef = doc(FIREBASE_DB, 'Favorites', user.uid);
+        const docSnap = await getDoc(userFavoritesRef);
+        if (docSnap.exists()) {
+          setFavorites(docSnap.data().favorites || []);
+        }
+      };
 
-  const removeFromFavorites = (menu) => {
-    setFavorites(favorites.filter((item) => item.id !== menu.id));
-  };
+      const fetchCart = async () => {
+        const userCartRef = doc(FIREBASE_DB, 'Carts', user.uid);
+        const docSnap = await getDoc(userCartRef);
+        if (docSnap.exists()) {
+          setCart(docSnap.data().cart || []);
+        }
+      };
 
-  const addToCart = (menu, selectedPlan) => {
-    let price = 0;
-    switch (selectedPlan) {
-      case "daily":
-        price = menu.dailyPrice;
-        break;
-      case "weekly":
-        price = menu.weeklyPrice;
-        break;
-      case "monthly":
-        price = menu.monthlyPrice;
-        break;
-      default:
-        price = 0;
+      fetchFavorites();
+      fetchCart();
     }
-    setCart([...cart, { ...menu, selectedPlan, price }]);
+  }, [user]);
+
+  const addToFavorites = async (menu) => {
+    try {
+      const userFavoritesRef = doc(FIREBASE_DB, 'Favorites', user.uid);
+      await updateDoc(userFavoritesRef, {
+        favorites: arrayUnion(menu)
+      });
+      setFavorites((prev) => [...prev, menu]);
+    } catch (error) {
+      console.error("Error adding to favorites: ", error);
+    }
   };
 
-  const removeFromCart = (menu) => {
-    setCart(
-      cart.filter(
-        (item) => item.id !== menu.id || item.selectedPlan !== menu.selectedPlan
-      )
-    );
+  const removeFromFavorites = async (menu) => {
+    try {
+      const userFavoritesRef = doc(FIREBASE_DB, 'Favorites', user.uid);
+      await updateDoc(userFavoritesRef, {
+        favorites: arrayRemove(menu)
+      });
+      setFavorites((prev) => prev.filter((item) => item.id !== menu.id));
+    } catch (error) {
+      console.error("Error removing from favorites: ", error);
+    }
+  };
+
+  const addToCart = async (menu, selectedPlan) => {
+    const price = (() => {
+      switch (selectedPlan) {
+        case "daily":
+          return menu.dailyPrice;
+        case "weekly":
+          return menu.weeklyPrice;
+        case "monthly":
+          return menu.monthlyPrice;
+        default:
+          return 0;
+      }
+    })();
+    const cartItem = { ...menu, selectedPlan, price };
+    try {
+      const userCartRef = doc(FIREBASE_DB, 'Carts', user.uid);
+      await updateDoc(userCartRef, {
+        cart: arrayUnion(cartItem)
+      });
+      setCart((prevCart) => [...prevCart, cartItem]);
+    } catch (error) {
+      console.error("Error adding to cart: ", error);
+    }
+  };
+
+  const removeFromCart = async (menu) => {
+    try {
+      const userCartRef = doc(FIREBASE_DB, 'Carts', user.uid);
+      await updateDoc(userCartRef, {
+        cart: arrayRemove(menu)
+      });
+      setCart((prevCart) =>
+        prevCart.filter(
+          (item) => item.id !== menu.id || item.selectedPlan !== menu.selectedPlan
+        )
+      );
+    } catch (error) {
+      console.error("Error removing from cart: ", error);
+    }
   };
 
   return (
@@ -80,7 +155,7 @@ export const AppProvider = ({ children }) => {
         cart,
         addToCart,
         removeFromCart,
-        studentData, // Providing student data in context
+        studentData,
       }}
     >
       {children}

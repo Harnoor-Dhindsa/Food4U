@@ -1,10 +1,30 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { AppContext } from '../../../others/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../../../_utils/FirebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 const FavScreen = ({ navigation }) => {
   const { favorites, removeFromFavorites } = useContext(AppContext);
+  const [userFavorites, setUserFavorites] = useState([]);
+  const user = FIREBASE_AUTH.currentUser;
+
+  useEffect(() => {
+    if (user) {
+      const fetchFavorites = async () => {
+        const userFavoritesRef = doc(FIREBASE_DB, 'Favorites', user.uid);
+        const docSnap = await getDoc(userFavoritesRef);
+        if (docSnap.exists()) {
+          setUserFavorites(docSnap.data().favorites || []);
+        } else {
+          console.log("No favorites document found!");
+        }
+      };
+
+      fetchFavorites();
+    }
+  }, [user, favorites]);
 
   const navigateToMenuDetail = (menu) => {
     navigation.navigate('MenuDetail', { menu });
@@ -28,7 +48,7 @@ const FavScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={favorites}
+        data={userFavorites}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.flatListContainer}
