@@ -365,12 +365,12 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     borderWidth: 2,
-    borderColor: "#5D3FD3",
+    borderColor: "#FE660F",
   },
   choosePhotoButton: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: "#5D3FD3",
+    backgroundColor: "#FE660F",
     borderRadius: 5,
   },
   buttonText: {
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: 10,
-    backgroundColor: "#5D3FD3",
+    backgroundColor: "#FE660F",
     borderRadius: 5,
     width: "48%",
   },
