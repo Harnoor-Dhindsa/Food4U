@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Linking } from "react-native";
-
 import {
   View,
   Text,
@@ -12,6 +11,7 @@ import {
   StatusBar,
   Alert,
 } from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   FIREBASE_AUTH,
   FIREBASE_DB,
@@ -23,6 +23,7 @@ import * as Location from "expo-location";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import CustomModalPicker from "../../../others/CustomModalPicker";
 import axios from "axios";
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -77,7 +78,7 @@ const ProfileScreen = ({ navigation }) => {
         phoneNumber,
         gender,
         age,
-        location,// Include the Stripe account ID
+        location,
       };
 
       try {
@@ -89,7 +90,6 @@ const ProfileScreen = ({ navigation }) => {
       }
     }
   };
-
 
   const handleLogOut = () => {
     FIREBASE_AUTH.signOut()
@@ -157,7 +157,6 @@ const ProfileScreen = ({ navigation }) => {
   }, []);
 
   const formatPhoneNumber = (text) => {
-    // Remove all non-numeric characters
     const cleaned = ("" + text).replace(/\D/g, "");
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     if (match) {
@@ -167,7 +166,6 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handlePhoneNumberChange = (text) => {
-    // Only format if the text is not being deleted and is defined
     if (text && text.length >= (phoneNumber ? phoneNumber.length : 0)) {
       setPhoneNumber(formatPhoneNumber(text));
     } else {
@@ -197,7 +195,6 @@ const ProfileScreen = ({ navigation }) => {
         },
       ]);
 
-      // Save the Stripe account ID in the user's profile
       if (user) {
         const profileData = {
           profilePic,
@@ -208,7 +205,7 @@ const ProfileScreen = ({ navigation }) => {
           gender,
           age,
           location,
-          stripeAccountId: account.id, // Save the Stripe account ID
+          stripeAccountId: account.id,
         };
 
         const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
@@ -223,62 +220,73 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
-      <View style={styles.profileContainer}>
-        <Image
-          key={profilePic}
-          source={{ uri: profilePic }}
-          style={styles.profilePhoto}
-        />
-        {editMode && (
+      <View style={styles.profileHeader}>
+        <View style={styles.profilePhotoContainer}>
+          <Image
+            key={profilePic}
+            source={{ uri: profilePic }}
+            style={styles.profilePhoto}
+          />
+          {editMode && (
+            <TouchableOpacity
+              style={styles.editPhotoButton}
+              onPress={handleChoosePhoto}
+            >
+              <Ionicons name="camera" size={20} color="#fff" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={styles.nameContainer}>
+          {editMode ? (
+            <>
+              <TextInput
+                style={[styles.name, styles.editableInput]}
+                value={firstName}
+                editable={editMode}
+                onChangeText={setFirstName}
+              />
+              <TextInput
+                style={[styles.name, styles.editableInput]}
+                value={lastName}
+                editable={editMode}
+                onChangeText={setLastName}
+              />
+            </>
+          ) : (
+            <Text style={styles.name}>
+              {firstName} {lastName}
+            </Text>
+          )}
+        </View>
+        {!editMode && (
           <TouchableOpacity
-            style={styles.choosePhotoButton}
-            onPress={handleChoosePhoto}
+            style={styles.topRightButton}
+            onPress={handleEditProfile}
           >
-            <Text style={styles.buttonText}>Choose Photo</Text>
+            <AntDesign
+              name={"edit"}
+              size={26}
+              color="#4F603B"
+            />
           </TouchableOpacity>
         )}
       </View>
       <View style={styles.infoContainer}>
-        <View style={styles.row}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>First Name</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.nonEditableText]}
-              value={firstName}
-              editable={editMode}
-              onChangeText={setFirstName}
-              placeholder="First Name"
-              placeholderTextColor="#ccc"
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Last Name</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.nonEditableText]}
-              value={lastName}
-              editable={editMode}
-              onChangeText={setLastName}
-              placeholder="Last Name"
-              placeholderTextColor="#ccc"
-            />
-          </View>
-        </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <MaterialIcons name="email" size={24} color="#4F603B" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={email}
-            editable={false} // Make email field non-editable
+            editable={false}
             placeholder="Email"
             placeholderTextColor="#ccc"
           />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Phone Number</Text>
+          <MaterialIcons name="phone" size={24} color="#4F603B" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={phoneNumber}
@@ -286,37 +294,22 @@ const ProfileScreen = ({ navigation }) => {
             onChangeText={handlePhoneNumberChange}
             placeholder="Phone Number"
             placeholderTextColor="#ccc"
-            keyboardType="numeric"
+            keyboardType="phone-pad"
           />
         </View>
-        <View style={styles.row}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Gender</Text>
-            <CustomModalPicker
-              options={[
-                { label: "Male", value: "Male" },
-                { label: "Female", value: "Female" },
-              ]}
-              selectedValue={gender}
-              onValueChange={setGender}
-              enabled={editMode}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Age</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.nonEditableText]}
-              value={age}
-              editable={editMode}
-              onChangeText={setAge}
-              placeholder="Age"
-              placeholderTextColor="#ccc"
-              keyboardType="numeric"
-            />
-          </View>
+        <View style={styles.inputContainer}>
+          <MaterialIcons name="wc" size={24} color="#4F603B" />
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={gender}
+            editable={editMode}
+            onChangeText={setGender}
+            placeholder="Gender"
+            placeholderTextColor="#ccc"
+          />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Location</Text>
+          <MaterialIcons name="location-on" size={24} color="#4F603B" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={location}
@@ -326,26 +319,39 @@ const ProfileScreen = ({ navigation }) => {
             placeholderTextColor="#ccc"
           />
         </View>
+        <View style={styles.inputContainer}>
+          <MaterialIcons name="cake" size={24} color="#4F603B" />
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={age}
+            editable={editMode}
+            onChangeText={setAge}
+            placeholder="Age"
+            placeholderTextColor="#ccc"
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+      {editMode ? (
         <View style={styles.buttonContainer}>
-          {editMode ? (
-            <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-              <Text style={styles.buttonText}>Save Profile</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-              <Text style={styles.buttonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.button} onPress={handleLogOut}>
-            <Text style={styles.buttonText}>Log Out</Text>
+          <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
+            <Text style={styles.buttonText}>Confirm Changes</Text>
           </TouchableOpacity>
         </View>
-        {!editMode && (
-          <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
-            <Text style={styles.buttonText}>Create Stripe Account</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      ) : (
+        <>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={handleLogOut}>
+              <Text style={styles.buttonText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
+              <Text style={styles.buttonText}>Create Stripe Account</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 };
@@ -356,77 +362,94 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#EDF3EB",
   },
-  profileContainer: {
+  profileHeader: {
+    marginTop: 70,
+    flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
+    position: "relative",
+  },
+  profilePhotoContainer: {
+    position: "relative",
+    marginRight: 15,
   },
   profilePhoto: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
     borderWidth: 2,
-    borderColor: "#FE660F",
+    borderColor: "#4F603B",
   },
-  choosePhotoButton: {
-    marginTop: 10,
+  editPhotoButton: {
+    position: "absolute",
+    bottom: 10,
+    right: 5,
+    backgroundColor: "#4F603B",
+    borderRadius: 50,
+    padding: 5,
+  },
+  topRightButton: {
+    position: "absolute",
+    top: 0,
+    right: 0,
     padding: 10,
-    backgroundColor: "#FE660F",
-    borderRadius: 5,
+    borderRadius: 50,
   },
-  buttonText: {
-    color: "#FFF",
-    textAlign: "center",
-    fontWeight: "bold",
+  nameContainer: {
+    flexDirection: 'row',  // Aligns children in a row
+    alignItems: 'center',  // Vertically centers children
+    marginBottom: 20,
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4F603B',  // Ensures the inputs take up available space
+  },
+  editableInput: { // Ensures the inputs take up available space
+    borderBottomWidth: 1,
+    borderBottomColor: '#4F603B',
+    borderRadius: 5,
+    padding: 3,
+    marginVertical: 5,
+    backgroundColor: '#EDF3EB',
   },
   infoContainer: {
-    backgroundColor: "#FFF",
-    padding: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    marginBottom: 20,
   },
   inputContainer: {
-    flex: 1,
-    marginBottom: 10,
-    paddingRight: 5,
-  },
-  label: {
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#4F603B",
+    paddingVertical: 5,
   },
   input: {
-    backgroundColor: "#EDF3EB",
-    padding: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    color: "#333",
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#4F603B",
   },
   nonEditableText: {
-    backgroundColor: "#F0F0F0",
-    color: "#999",
+    color: "#4F603B",
   },
   buttonContainer: {
-    marginTop: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
   },
   button: {
-    padding: 10,
-    backgroundColor: "#FE660F",
+    backgroundColor: "#4F603B",
+    padding: 15,
     borderRadius: 5,
-    width: "48%",
+    marginBottom: 10,
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
