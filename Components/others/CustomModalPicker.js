@@ -55,12 +55,8 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
     justifyContent: 'center',
     paddingHorizontal: 10,
-    backgroundColor: '#fff',
   },
   inputText: {
     color: '#333',
@@ -81,7 +77,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 18,
-    color: '#333',
+    color: '#000',
   },
   cancelButton: {
     borderTopWidth: 1,

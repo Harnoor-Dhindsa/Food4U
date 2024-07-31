@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, SectionList, Platform, SafeAreaView } from 'react-native';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
@@ -9,35 +10,35 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const CreateMenu = ({ route, navigation }) => {
   const { menu } = route.params || {};
-  const [heading, setHeading] = useState(menu?.heading || '');
+  const [heading, setHeading] = useState(menu?.heading || "");
   const [items, setItems] = useState(menu?.items || []);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('');
-  const [dessert, setDessert] = useState(menu?.dessert || '');
-  const [dessertQuantity, setDessertQuantity] = useState('');
-  const [dessertDays, setDessertDays] = useState('');
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemQuantity, setNewItemQuantity] = useState("");
+  const [dessert, setDessert] = useState(menu?.dessert || "");
+  const [dessertQuantity, setDessertQuantity] = useState("");
+  const [dessertDays, setDessertDays] = useState("");
   const [days, setDays] = useState(menu?.days || []);
-  const [dailyPrice, setDailyPrice] = useState(menu?.dailyPrice || '');
-  const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || '');
-  const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || '');
+  const [dailyPrice, setDailyPrice] = useState(menu?.dailyPrice || "");
+  const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || "");
+  const [monthlyPrice, setMonthlyPrice] = useState(menu?.monthlyPrice || "");
   const [avatars, setAvatars] = useState(menu?.avatars || []);
   const [pickup, setPickup] = useState(menu?.pickup || false);
-  const [pickupAddress, setPickupAddress] = useState(menu?.pickupAddress || '');
+  const [pickupAddress, setPickupAddress] = useState(menu?.pickupAddress || "");
   const [delivery, setDelivery] = useState(menu?.delivery || false);
 
   useEffect(() => {
-    if (typeof days === 'string') {
-      setDays(days.split(', '));
+    if (typeof days === "string") {
+      setDays(days.split(", "));
     }
   }, [days]);
 
   const handleAddItem = () => {
     if (newItemName && newItemQuantity) {
       setItems([{ name: newItemName, quantity: newItemQuantity }, ...items]);
-      setNewItemName('');
-      setNewItemQuantity('');
+      setNewItemName("");
+      setNewItemQuantity("");
     } else {
-      Alert.alert('Error', 'Please fill in both item name and quantity.');
+      Alert.alert("Error", "Please fill in both item name and quantity.");
     }
   };
 
@@ -56,7 +57,10 @@ const CreateMenu = ({ route, navigation }) => {
       const uploadedAvatars = await Promise.all(
         result.assets.map(async (asset) => {
           const { uri } = asset;
-          const storageRef = ref(FIREBASE_STORAGE, `menuAvatars/${new Date().getTime()}-${Math.random()}`);
+          const storageRef = ref(
+            FIREBASE_STORAGE,
+            `menuAvatars/${new Date().getTime()}-${Math.random()}`
+          );
           const response = await fetch(uri);
           const blob = await response.blob();
           await uploadBytes(storageRef, blob);
@@ -67,43 +71,63 @@ const CreateMenu = ({ route, navigation }) => {
     }
   };
 
-  const handleSaveMenu = async () => {
-    const user = FIREBASE_AUTH.currentUser;
-    const menuData = {
-      heading,
-      items,
-      dessert,
-      dessertQuantity,
-      dessertDays,
-      days,
-      dailyPrice,
-      weeklyPrice,
-      monthlyPrice,
-      avatars,
-      chefId: user.uid,
-      createdAt: menu ? menu.createdAt : new Date(),  // Set creation date if it is a new menu
-      updatedAt: new Date(),  // Update date for both new and existing menus
-      pickup,
-      pickupAddress: pickup ? pickupAddress : '',
-      delivery,
-    };
+const handleSaveMenu = async () => {
+  if (
+    heading.trim() === "" ||
+    items.length < 3 ||
+    days.length === 0 ||
+    dailyPrice.trim() === "" ||
+    weeklyPrice.trim() === "" ||
+    monthlyPrice.trim() === "" ||
+    (!pickup && !delivery) ||
+    (pickup && pickupAddress.trim() === "") ||
+    (dessert && (!dessertQuantity || !dessertDays))
+  ) {
+    Alert.alert(
+      "Error",
+      "Please fill in all required fields and ensure at least 3 items are added. If you provide a dessert, make sure to enter quantity and days."
+    );
+    return;
+  }
 
-    try {
-      if (menu) {
-        const menuDocRef = doc(FIREBASE_DB, 'Menus', menu.id);
-        await updateDoc(menuDocRef, menuData);
-      } else {
-        await addDoc(collection(FIREBASE_DB, 'Menus'), menuData);
-      }
-      navigation.goBack();
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
+  const user = FIREBASE_AUTH.currentUser;
+  const menuData = {
+    heading,
+    items,
+    dessert,
+    dessertQuantity,
+    dessertDays,
+    days,
+    dailyPrice,
+    weeklyPrice,
+    monthlyPrice,
+    avatars,
+    chefId: user.uid,
+    createdAt: menu ? menu.createdAt : new Date(),
+    updatedAt: new Date(),
+    pickup,
+    pickupAddress: pickup ? pickupAddress : "",
+    delivery,
   };
+
+  try {
+    if (menu) {
+      const menuDocRef = doc(FIREBASE_DB, "Menus", menu.id);
+      await updateDoc(menuDocRef, menuData);
+    } else {
+      await addDoc(collection(FIREBASE_DB, "Menus"), menuData);
+    }
+    navigation.goBack();
+  } catch (error) {
+    Alert.alert("Error", error.message);
+  }
+};
 
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
-      <Text>{item.name} - {item.quantity}</Text>
+      <Text>
+        {item.name} - {item.quantity}
+      </Text>
       <TouchableOpacity onPress={() => handleDeleteItem(index)}>
         <Icon name="delete" size={24} color="#FE660F" />
       </TouchableOpacity>
@@ -112,7 +136,7 @@ const CreateMenu = ({ route, navigation }) => {
 
   const sections = [
     {
-      title: 'Menu Heading',
+      title: "Menu Heading *",
       data: [
         <TextInput
           placeholder="Menu Heading"
@@ -123,7 +147,7 @@ const CreateMenu = ({ route, navigation }) => {
       ],
     },
     {
-      title: 'Add Item',
+      title: "Add Item *",
       data: [
         <View style={styles.itemInputContainer}>
           <TextInput
@@ -137,7 +161,7 @@ const CreateMenu = ({ route, navigation }) => {
             value={newItemQuantity}
             onChangeText={setNewItemQuantity}
             style={[styles.input, styles.itemInput]}
-            keyboardType='numeric'
+            keyboardType="numeric"
           />
           <TouchableOpacity onPress={handleAddItem} style={styles.addButton}>
             <Icon name="add" size={24} color="#fff" />
@@ -154,66 +178,77 @@ const CreateMenu = ({ route, navigation }) => {
       },
     },
     {
-      title: 'Dessert (optional)',
+      title: "Dessert (optional)",
       data: [
         <TextInput
           placeholder="Dessert"
           value={dessert}
-          onChangeText={setDessert}
+          onChangeText={(text) => setDessert(text)}
           style={styles.input}
         />,
-        <TextInput
-          placeholder="Dessert Quantity"
-          value={dessertQuantity}
-          onChangeText={setDessertQuantity}
-          style={styles.input}
-        />,
-        <TextInput
-          placeholder="Dessert Days (e.g., Monday, Tuesday)"
-          value={dessertDays}
-          onChangeText={setDessertDays}
-          style={styles.input}
-        />,
+        dessert ? (
+          <>
+            <TextInput
+              placeholder="Dessert Quantity"
+              value={dessertQuantity}
+              onChangeText={setDessertQuantity}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Dessert Days (e.g., Monday, Tuesday)"
+              value={dessertDays}
+              onChangeText={setDessertDays}
+              style={styles.input}
+            />
+          </>
+        ) : null,
       ],
     },
+
     {
-      title: 'Available Days',
+      title: "Available Days *",
       data: [
         <TextInput
           placeholder="Available Days (e.g., Monday, Tuesday)"
-          value={days.join(', ')}
-          onChangeText={(text) => setDays(text.split(', '))}
+          value={days.join(", ")}
+          onChangeText={(text) => setDays(text.split(", "))}
           style={styles.input}
         />,
       ],
     },
     {
-      title: 'Prices',
+      title: "Prices *",
       data: [
         <TextInput
           placeholder="Daily Price"
           value={dailyPrice}
           onChangeText={setDailyPrice}
           style={styles.input}
+          keyboardType="numeric"
         />,
         <TextInput
           placeholder="Weekly Price"
           value={weeklyPrice}
           onChangeText={setWeeklyPrice}
           style={styles.input}
+          keyboardType="numeric"
         />,
         <TextInput
           placeholder="Monthly Price"
           value={monthlyPrice}
           onChangeText={setMonthlyPrice}
           style={styles.input}
+          keyboardType="numeric"
         />,
       ],
     },
     {
-      title: 'Photos',
+      title: "Photos",
       data: [
-        <TouchableOpacity onPress={handleChoosePhoto} style={styles.photoButton}>
+        <TouchableOpacity
+          onPress={handleChoosePhoto}
+          style={styles.photoButton}
+        >
           <Text style={styles.photoButtonText}>Choose Photos</Text>
         </TouchableOpacity>,
         <View style={styles.imageContainer}>
@@ -224,25 +259,33 @@ const CreateMenu = ({ route, navigation }) => {
       ],
     },
     {
-      title: 'Pickup and Delivery',
+      title: "Pickup or Delivery *",
       data: [
         <View style={styles.optionContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.optionButton, pickup && styles.selectedOption]}
             onPress={() => setPickup(!pickup)}
           >
-            <Text style={styles.optionText}>Pickup</Text>
+            <Text
+              style={[styles.optionText, pickup && styles.selectedOptionText]}
+            >
+              Pickup
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.optionButton, delivery && styles.selectedOption]}
             onPress={() => setDelivery(!delivery)}
           >
-            <Text style={styles.optionText}>Delivery</Text>
+            <Text
+              style={[styles.optionText, delivery && styles.selectedOptionText]}
+            >
+              Delivery
+            </Text>
           </TouchableOpacity>
         </View>,
         pickup && (
           <TextInput
-            placeholder="Pickup Address"
+            placeholder="Pickup Address *"
             value={pickupAddress}
             onChangeText={setPickupAddress}
             style={styles.input}
@@ -252,10 +295,10 @@ const CreateMenu = ({ route, navigation }) => {
       renderItem: ({ item }) => (item ? item : null),
     },
     {
-      title: '',
+      title: "Save Menu",
       data: [
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveMenu}>
-          <Text style={styles.saveButtonText}>Save Menu</Text>
+        <TouchableOpacity onPress={handleSaveMenu} style={styles.saveButton}>
+          <Text style={styles.saveButtonText}>Create Menu</Text>
         </TouchableOpacity>,
       ],
     },
@@ -266,9 +309,14 @@ const CreateMenu = ({ route, navigation }) => {
       <SectionList
         sections={sections}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <View style={styles.item}>{item}</View>}
+        renderItem={({ item, index, section }) => {
+          if (section.title === "Save Menu") {
+            return item; // Render the save button
+          }
+          return item; // Render all other items
+        }}
         renderSectionHeader={({ section: { title } }) => (
-          title ? <Text style={styles.sectionHeader}>{title}</Text> : null
+          <Text style={styles.sectionHeader}>{title}</Text>
         )}
       />
     </SafeAreaView>
@@ -278,98 +326,114 @@ const CreateMenu = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 8,
+    backgroundColor: "#fff",
   },
   input: {
     height: 40,
-    borderColor: '#ccc',
+    borderColor: "#ddd",
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    marginVertical: 8,
+    borderRadius: 5,
+    margin: 10,
+    paddingHorizontal: 10,
+  },
+  itemContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    margin: 10,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  itemText: {
+    fontSize: 16,
   },
   itemInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    margin: 10,
   },
   itemInput: {
     flex: 1,
-    marginRight: 8,
   },
   addButton: {
-    backgroundColor: '#FE660F',
-    borderRadius: 4,
-    padding: 8,
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 8,
-    backgroundColor: '#f9f9f9',
-    marginVertical: 4,
-    borderRadius: 4,
+    backgroundColor: "#FE660F",
+    borderRadius: 5,
+    marginLeft: 10,
+    padding: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
   photoButton: {
-    backgroundColor: '#FE660F',
-    borderRadius: 4,
+    backgroundColor: "#FE660F",
+    borderRadius: 5,
+    margin: 10,
     padding: 10,
-    alignItems: 'center',
-    marginVertical: 8,
+    alignItems: "center",
   },
   photoButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontSize: 16,
   },
   imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginVertical: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    margin: 10,
   },
   image: {
     width: 100,
     height: 100,
-    margin: 4,
+    margin: 5,
+    borderRadius: 5,
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    backgroundColor: "#f8f8f8",
+    padding: 10,
+  },
+  footerSpace: {
+    height: 50,
   },
   optionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    margin: 10,
   },
   optionButton: {
     flex: 1,
     padding: 10,
-    alignItems: 'center',
-    borderColor: '#ccc',
+    borderRadius: 5,
+    margin: 5,
+    borderColor: "#FE660F",
     borderWidth: 1,
-    borderRadius: 4,
-    marginHorizontal: 4,
+    alignItems: "center",
+    backgroundColor: "#fff", // Default background color
   },
   selectedOption: {
-    backgroundColor: '#FE660F',
+    backgroundColor: "#FE660F", // Updated selected color
   },
   optionText: {
-    color: '#000',
+    color: "#FE660F", // Default text color
+  },
+  selectedOptionText: {
+    color: "#fff", // Text color for selected option
   },
   saveButton: {
-    backgroundColor: '#FE660F',
-    borderRadius: 4,
-    padding: 16,
-    alignItems: 'center',
-    marginVertical: 8,
+    backgroundColor: "#FE660F",
+    padding: 15,
+    borderRadius: 5,
+    margin: 10,
+    alignItems: "center",
   },
   saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
     fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
 export default CreateMenu;
+
+     

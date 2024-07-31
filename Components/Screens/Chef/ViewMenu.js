@@ -1,47 +1,57 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity, Platform } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  FlatList,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const ViewMenu = ({ route, navigation }) => {
   const { menu } = route.params;
 
   const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-      <Text style={styles.itemText}>{item.name}</Text>
-      <Text style={styles.itemText}>{item.quantity}</Text>
+    <View style={styles.listItem}>
+      <Text style={styles.itemName}>{item.name}</Text>
+      <Text style={styles.itemQuantity}>{item.quantity}</Text>
     </View>
   );
 
   const renderDessert = () => (
-    <View style={styles.itemContainer}>
-      <Text style={styles.itemText}>{menu.dessert}</Text>
-      <Text style={styles.itemText}>{menu.dessertQuantity}</Text>
-      <Text style={styles.itemText}>{menu.dessertDays}</Text>
+    <View style={styles.listItem}>
+      <Text style={styles.itemName}>{menu.dessert}</Text>
+      <Text style={styles.itemQuantity}>{menu.dessertQuantity}</Text>
+      <Text style={styles.itemQuantity}>{menu.dessertDays}</Text>
     </View>
   );
 
   const ListHeaderComponent = () => (
     <>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Icon name="arrow-back" size={24} color="black" />
-        <Text style={styles.backButtonText}>Menus</Text>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Icon name="arrow-back" size={24} color="#FE660F" />
+        <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
       <Text style={styles.heading}>{menu.heading}</Text>
-      <Text style={styles.subheading}>Items</Text>
     </>
   );
 
   const ListFooterComponent = () => (
     <>
       <Text style={styles.subheading}>Dessert</Text>
-      {renderDessert()}
+      {menu.dessert && renderDessert()}
 
       <Text style={styles.subheading}>Available Days</Text>
       <View style={styles.daysContainer}>
         {menu.days.map((day, index) => (
-          <View key={index} style={styles.dayItem}>
-            <Text style={styles.dayText}>{day}</Text>
-          </View>
+          <Text key={index} style={styles.dayItem}>
+            {day}
+          </Text>
         ))}
       </View>
 
@@ -72,21 +82,32 @@ const ViewMenu = ({ route, navigation }) => {
       <Text style={styles.subheading}>Pickup & Delivery</Text>
       <View style={styles.optionContainer}>
         <TouchableOpacity
-          style={[styles.optionButton, menu.pickup ? styles.selectedOption : styles.unselectedOption]}
+          style={[
+            styles.optionButton,
+            menu.pickup ? styles.selectedOption : styles.unselectedOption,
+          ]}
           disabled={!menu.pickup}
         >
           <Text style={styles.optionText}>Pickup</Text>
-          {menu.pickup && <Text style={styles.optionText}>Address: {menu.pickupAddress}</Text>}
+          {menu.pickup && (
+            <Text style={styles.optionText}>Address: {menu.pickupAddress}</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.optionButton, menu.delivery ? styles.selectedOption : styles.unselectedOption]}
+          style={[
+            styles.optionButton,
+            menu.delivery ? styles.selectedOption : styles.unselectedOption,
+          ]}
           disabled={!menu.delivery}
         >
           <Text style={styles.optionText}>Delivery</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditMenu', { menu })}>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => navigation.navigate("EditMenu", { menu })}
+      >
         <Icon name="edit" size={24} color="#fff" />
         <Text style={styles.editButtonText}>Edit Menu</Text>
       </TouchableOpacity>
@@ -101,6 +122,7 @@ const ViewMenu = ({ route, navigation }) => {
         keyExtractor={(item, index) => index.toString()}
         ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={ListFooterComponent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
     </View>
   );
@@ -110,92 +132,99 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#EDF3EB',
+    backgroundColor: "#F7F7F7",
     ...Platform.select({
       ios: {
-        paddingTop: 50, // Ensure padding is correct for iOS devices
+        paddingTop: 50,
       },
       android: {
-        paddingTop: 0, // Ensure padding is correct for Android devices
+        paddingTop: 0,
       },
     }),
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   backButtonText: {
     marginLeft: 5,
     fontSize: 16,
-    color: 'black',
+    color: "#FE660F",
   },
   heading: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FE660F',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FE660F",
+    textAlign: "center",
     marginBottom: 20,
-    textAlign: 'center',
   },
   subheading: {
     fontSize: 18,
-    color: '#333',
+    color: "#333",
     marginVertical: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-  itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 5,
+  listItem: {
     padding: 10,
-    backgroundColor: '#f78b4d',
-    borderRadius: 5,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
   },
-  itemText: {
-    color: 'black',
+  itemName: {
+    color: "#333",
+    flex: 1,
+  },
+  itemQuantity: {
+    color: "#333",
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 5,
   },
   priceTable: {
     borderWidth: 1,
-    borderColor: 'black',
+    borderColor: "#E0E0E0",
     borderRadius: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 20,
+    backgroundColor: "#FFF",
   },
   priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'black',
+    borderBottomColor: "#E0E0E0",
   },
   priceLabel: {
-    fontWeight: 'bold',
-    color: 'black',
+    fontWeight: "bold",
+    color: "#FE660F",
   },
   priceValue: {
-    color: '#333',
+    color: "#333",
   },
   daysContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginVertical: 10,
   },
   dayItem: {
-    backgroundColor: '#f78b4d',
+    backgroundColor: "#FE660F",
     padding: 10,
     borderRadius: 5,
     marginRight: 5,
     marginBottom: 5,
-  },
-  dayText: {
-    color: 'black',
+    color: "#fff",
   },
   imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginTop: 20,
   },
   image: {
@@ -205,40 +234,40 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   optionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 8,
   },
   optionButton: {
     flex: 1,
     padding: 10,
-    alignItems: 'center',
-    borderColor: '#ccc',
+    alignItems: "center",
+    borderColor: "#E0E0E0",
     borderWidth: 1,
     borderRadius: 4,
     marginHorizontal: 4,
   },
   selectedOption: {
-    backgroundColor: '#FE660F',
+    backgroundColor: "#FE660F",
   },
   unselectedOption: {
-    backgroundColor: '#ddd',
+    backgroundColor: "#F2F2F2",
   },
   optionText: {
-    color: 'black',
+    color: "#333",
   },
   editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FE660F',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FE660F",
     padding: 15,
     borderRadius: 5,
     marginTop: 20,
   },
   editButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     marginLeft: 10,
   },
 });

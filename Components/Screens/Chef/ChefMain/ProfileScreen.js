@@ -303,7 +303,7 @@ const ProfileScreen = ({ navigation }) => {
       </View>
       <View style={styles.infoContainer}>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="email" size={30} color="#FE660F" />
+          <MaterialIcons name="email" size={30} color="#e8c123" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={email}
@@ -313,7 +313,7 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="phone" size={30} color="#FE660F" />
+          <MaterialIcons name="phone" size={30} color="#0a50d1" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={phoneNumber}
@@ -345,7 +345,7 @@ const ProfileScreen = ({ navigation }) => {
   )}
 </View>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="cake" size={30} color="#FE660F" />
+          <MaterialIcons name="cake" size={30} color="#d10a67" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={age}
@@ -357,7 +357,7 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="location-on" size={30} color="#FE660F" />
+          <MaterialIcons name="location-on" size={30} color="#d10a2b" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={location}
@@ -368,6 +368,7 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
         <View style={styles.NotificationsContainer}>
+        <Ionicons name="notifications" size={30} color="#f7dc0a" />
           <Text style={styles.inputSetting}>Notifications:</Text>
           <Switch
             value={notificationsEnabled}
@@ -375,9 +376,9 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
         <View style={styles.PolicyContainer}>
-          <MaterialIcons name="policy" size={30} color="#FE660F" />
+          <MaterialIcons name="policy" size={30} color="#0f0fdb" />
           <Text style={styles.inputSetting}>Policy</Text>
-          <AntDesign name="arrowright" size={30} color="#FE660F" />
+          <AntDesign name="arrowright" size={30} color="#000" />
         </View>
       </View>
       {editMode ? (
@@ -469,43 +470,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
-    borderRadius: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: "#FE660F",
+    padding: 5,
     paddingVertical: 5,
-    height: 40,
+    height: 43,
+    borderRadius: 5,
+    backgroundColor: "#EDF3EB",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.23,
+    shadowRadius: 2.62,
+    elevation: 4, // This is for Android
   },
   NotificationsContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 45,
-    borderBottomWidth: 2,
-    borderBottomColor: "#FE660F",
     paddingVertical: 5,
   },
   PolicyContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 15,
-    borderBottomWidth: 2,
-    borderBottomColor: "#FE660F",
     paddingVertical: 5,
   },
   input: {
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
-    color: "#FE660F",
+    color: "#000",
   },
   inputSetting: {
     flex: 1,
     marginLeft: 10,
     fontSize: 18,
-    color: "#FE660F",
+    color: "#000",
     fontWeight: "bold",
   },
   nonEditableText: {
-    color: "#FE660F",
+    color: "#000",
     fontWeight: "bold",
   },
   buttonContainer: {
