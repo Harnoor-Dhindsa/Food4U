@@ -10,9 +10,9 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Swiper from "react-native-swiper";
 import { AppContext } from "../../others/AppContext";
 import {
   FIREBASE_DB,
@@ -45,12 +45,23 @@ const MenuDetail = ({ route, navigation }) => {
           const chefData = chefDoc.data();
           setChefName(`${chefData.firstName} ${chefData.lastName}`);
 
-          const profilePicRef = ref(
-            FIREBASE_STORAGE,
-            `profilePics/${menu.chefId}`
-          );
-          const profilePicUrl = await getDownloadURL(profilePicRef);
-          setChefProfilePic(profilePicUrl);
+          try {
+            const profilePicRef = ref(
+              FIREBASE_STORAGE,
+              `profilePics/${menu.chefId}`
+            );
+            const profilePicUrl = await getDownloadURL(profilePicRef);
+            setChefProfilePic(profilePicUrl);
+          } catch (error) {
+            if (error.code === "storage/object-not-found") {
+              console.log(
+                "Chef profile picture not found, setting default image"
+              );
+              setChefProfilePic("../../Images/dp.jpg"); // Set the URL to your default image here
+            } else {
+              console.error("Error fetching profile picture:", error);
+            }
+          }
         } else {
           console.log("Chef profile not found");
         }
@@ -90,18 +101,20 @@ const MenuDetail = ({ route, navigation }) => {
 
   const sections = [
     { title: "Items", data: menu.items },
-    {
-      title: "Dessert",
-      data: menu.dessert
-        ? [
-            {
-              name: menu.dessert,
-              quantity: menu.dessertQuantity,
-              days: menu.dessertDays,
-            },
-          ]
-        : [],
-    },
+    ...(menu.dessert && menu.dessert.length
+      ? [
+          {
+            title: "Dessert",
+            data: [
+              {
+                name: menu.dessert,
+                quantity: menu.dessertQuantity,
+                days: menu.dessertDays,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       title: "Plans",
       data: [
@@ -132,32 +145,19 @@ const MenuDetail = ({ route, navigation }) => {
   };
 
   const renderItem = ({ item, section }) => {
-    if (section.title === "Items") {
+    if (section.title === "Items" || section.title === "Dessert") {
       return (
         <View style={styles.itemContainer}>
           <Text style={styles.itemName}>{item.name}</Text>
           <Text style={styles.itemQuantity}>{item.quantity}</Text>
-        </View>
-      );
-    } else if (section.title === "Dessert") {
-      if (item.name) {
-        return (
-          <View style={styles.dessertContainer}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.text}>Quantity: {item.quantity}</Text>
-            <Text style={styles.text}>
+          {section.title === "Dessert" && (
+            <Text style={styles.itemQuantity}>
               Available:{" "}
               {Array.isArray(item.days) ? item.days.join(", ") : item.days}
             </Text>
-          </View>
-        );
-      } else {
-        return (
-          <View style={styles.noDessertContainer}>
-            <Text style={styles.noDessertText}>No dessert available.</Text>
-          </View>
-        );
-      }
+          )}
+        </View>
+      );
     } else if (section.title === "Plans") {
       return (
         <TouchableOpacity
@@ -180,15 +180,23 @@ const MenuDetail = ({ route, navigation }) => {
   const renderPhotos = () => {
     if (menu.avatars && menu.avatars.length > 0) {
       return (
-        <View style={styles.imageContainer}>
-          <Swiper style={styles.wrapper} showsButtons={true} loop={false}>
-            {menu.avatars.map((uri, index) => (
-              <View key={index} style={styles.slide}>
-                <Image source={{ uri: uri }} style={styles.image} />
-              </View>
-            ))}
-          </Swiper>
-        </View>
+        <FlatList
+          horizontal
+          pagingEnabled
+          data={menu.avatars}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.slide}>
+              {item ? (
+                <Image source={{ uri: item }} style={styles.image} />
+              ) : (
+                <View style={styles.noImageContainer}>
+                  <Text style={styles.noImageText}>Image not available</Text>
+                </View>
+              )}
+            </View>
+          )}
+        />
       );
     } else {
       return (
@@ -274,40 +282,64 @@ const MenuDetail = ({ route, navigation }) => {
           />
         </TouchableOpacity>
       </View>
-      <View style={styles.chefNameContainer}>
-        <Image source={{ uri: chefProfilePic }} style={styles.chefImage} />
-        <Text style={styles.chefNameText}> {chefName}</Text>
-        <TouchableOpacity style={styles.chatButton} onPress={navigateToChat}>
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={20}
-            color="#FFF"
-            style={styles.chatIcon}
-          />
-          <Text style={styles.chatButtonText}>Chat</Text>
-        </TouchableOpacity>
-      </View>
-      {renderPhotos()}
-      <SectionList
-        sections={sections}
-        keyExtractor={(item, index) => item + index}
-        renderSectionHeader={renderSectionHeader}
-        renderItem={renderItem}
-        contentContainerStyle={styles.contentContainer}
+      <FlatList
+        ListHeaderComponent={
+          <>
+            <View style={styles.chefNameContainer}>
+              {chefProfilePic ? (
+                <Image
+                  source={{ uri: chefProfilePic }}
+                  style={styles.chefImage}
+                />
+              ) : (
+                <View style={styles.noImageContainer}>
+                  <Text style={styles.noImageText}></Text>
+                </View>
+              )}
+              <Text style={styles.chefNameText}>{chefName}</Text>
+              <TouchableOpacity
+                style={styles.chatButton}
+                onPress={navigateToChat}
+              >
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={20}
+                  color="#FFF"
+                  style={styles.chatIcon}
+                />
+                <Text style={styles.chatButtonText}>Chat</Text>
+              </TouchableOpacity>
+            </View>
+            {renderPhotos()}
+            <View style={styles.availabilityContainer}>
+              <Text style={styles.availabilityMessage}>
+                {getAvailabilityMessage()}
+              </Text>
+            </View>
+            <View style={styles.sectionContainer}>
+              <SectionList
+                sections={sections}
+                keyExtractor={(item, index) => item + index}
+                renderItem={renderItem}
+                renderSectionHeader={renderSectionHeader}
+                contentContainerStyle={styles.sectionList}
+              />
+            </View>
+          </>
+        }
+        ListFooterComponent={
+          <TouchableOpacity
+            style={[
+              styles.addToCartButton,
+              !selectedPlan && styles.addToCartButtonDisabled,
+            ]}
+            onPress={handleAddToCart}
+            disabled={!selectedPlan}
+          >
+            <Text style={styles.addToCartButtonText}>Add to Cart</Text>
+          </TouchableOpacity>
+        }
       />
-      <Text style={styles.pickupanddev}>{getAvailabilityMessage()}</Text>
-      <TouchableOpacity
-        style={[
-          styles.addToCartButton,
-          !selectedPlan && styles.disabledAddToCartButton,
-        ]}
-        disabled={!selectedPlan}
-        onPress={handleAddToCart}
-      >
-        <Text style={styles.addToCartButtonText}>
-          Add to Cart {getPlanPrice(selectedPlan)}
-        </Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -316,6 +348,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#EDF3EB",
+  },
+  scrollContainer: {
+    paddingBottom: 16,
   },
   header: {
     flexDirection: "row",
@@ -330,7 +365,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#4A4A4A",
+    color: "#FE660F",
   },
   favoriteButton: {
     padding: 8,
@@ -338,143 +373,131 @@ const styles = StyleSheet.create({
   chefNameContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 16,
     paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#EDF3EB",
+    borderRadius: 8,
+    marginBottom: 16,
   },
   chefImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
   },
   chefNameText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#4A4A4A",
-    flex: 1,
+    color: "#FE660F",
   },
   chatButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FE660F",
     padding: 8,
-    borderRadius: 16,
+    borderRadius: 25,
+    marginLeft: "auto",
+  },
+  chatButtonText: {
+    color: "#FFF",
+    marginLeft: 4,
   },
   chatIcon: {
     marginRight: 4,
   },
-  chatButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
-  },
   imageContainer: {
-    height: Dimensions.get("window").height * 0.3,
+    height: 200,
+    marginVertical: 16,
   },
-  wrapper: {},
   slide: {
-    flex: 1,
+    width: Dimensions.get("window").width,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#9DD6EB",
   },
   image: {
-    width: Dimensions.get("window").width,
-    height: "100%",
+    width: Dimensions.get("window").width - 32,
+    height: 180,
+    borderRadius: 10,
+    resizeMode: "cover",
+    marginHorizontal: 16,
   },
   noImageContainer: {
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    height: 180,
+    backgroundColor: "#C0C0C0",
+    borderRadius: 10,
+    marginHorizontal: 16,
   },
   noImageText: {
-    fontSize: 16,
-    color: "#4A4A4A",
+    color: "#FFF",
+  },
+  availabilityContainer: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  availabilityMessage: {
+    fontSize: 14,
+    color: "#555",
+  },
+  sectionContainer: {
+    paddingHorizontal: 16,
   },
   subheading: {
     fontSize: 18,
     fontWeight: "bold",
-    marginVertical: 8,
-    marginLeft: 16,
     color: "#FE660F",
+    paddingVertical: 8,
   },
   itemContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#DDD",
   },
   itemName: {
     fontSize: 16,
-    color: "#4A4A4A",
+    color: "#333",
   },
   itemQuantity: {
-    fontSize: 16,
-    color: "#4A4A4A",
-  },
-  dessertContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#DDD",
-  },
-  noDessertContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  noDessertText: {
-    fontSize: 16,
-    color: "#4A4A4A",
+    fontSize: 14,
+    color: "#777",
   },
   planButton: {
-    padding: 16,
-    margin: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#DDD",
     backgroundColor: "#FFF",
+    borderColor: "#FE660F",
+    borderWidth: 1,
+    marginVertical: 4,
   },
   selectedPlanButton: {
-    borderColor: "#FE660F",
-    backgroundColor: "#FFF3E6",
+    backgroundColor: "#FE660F",
   },
   planText: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#4A4A4A",
+    color: "#333",
   },
   planDescription: {
     fontSize: 14,
-    color: "#4A4A4A",
-  },
-  contentContainer: {
-    paddingBottom: 16,
+    color: "#777",
   },
   addToCartButton: {
     backgroundColor: "#FE660F",
-    paddingVertical: 16,
-    alignItems: "center",
+    paddingVertical: 12,
     borderRadius: 8,
+    alignItems: "center",
     margin: 16,
   },
-  disabledAddToCartButton: {
-    backgroundColor: "#FFA860",
+  addToCartButtonDisabled: {
+    backgroundColor: "#DDD",
   },
   addToCartButtonText: {
+    color: "#FFF",
     fontSize: 16,
     fontWeight: "bold",
-    color: "#FFF",
-  },
-  text: {
-    fontSize: 16,
-    color: "#4A4A4A",
-  },
-  pickupanddev: {
-    fontSize: 16,
-    color: "#4A4A4A",
-    textAlign: "center",
   },
 });
 
