@@ -10,6 +10,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Switch,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
@@ -20,6 +21,7 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import CustomModalPicker from "../../../others/CustomModalPicker";
 import axios from "axios";
@@ -35,6 +37,7 @@ const ProfileScreen = ({ navigation }) => {
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const [profilePic, setProfilePic] = useState(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const user = FIREBASE_AUTH.currentUser;
 
@@ -59,6 +62,9 @@ const ProfileScreen = ({ navigation }) => {
       if (profileData.profilePic) {
         setProfilePic(profileData.profilePic);
       }
+      if (profileData.notificationsEnabled !== undefined) {
+        setNotificationsEnabled(profileData.notificationsEnabled);
+      }
     } else {
       console.log("No such document!");
     }
@@ -79,6 +85,7 @@ const ProfileScreen = ({ navigation }) => {
         gender,
         age,
         location,
+        notificationsEnabled,
       };
 
       try {
@@ -220,6 +227,26 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  const toggleNotifications = async (value) => {
+    setNotificationsEnabled(value);
+    if (value) {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission for notifications was denied");
+        setNotificationsEnabled(false);
+      }
+    }
+
+    if (user) {
+      const profileData = {
+        notificationsEnabled: value,
+      };
+
+      const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+      await setDoc(userRef, profileData, { merge: true });
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
@@ -269,14 +296,14 @@ const ProfileScreen = ({ navigation }) => {
             <AntDesign
               name={"edit"}
               size={26}
-              color="#4F603B"
+              color="#FE660F"
             />
           </TouchableOpacity>
         )}
       </View>
       <View style={styles.infoContainer}>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="email" size={24} color="#4F603B" />
+          <MaterialIcons name="email" size={30} color="#FE660F" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={email}
@@ -286,7 +313,7 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="phone" size={24} color="#4F603B" />
+          <MaterialIcons name="phone" size={30} color="#FE660F" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={phoneNumber}
@@ -298,29 +325,27 @@ const ProfileScreen = ({ navigation }) => {
           />
         </View>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="wc" size={24} color="#4F603B" />
-          <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
-            value={gender}
-            editable={editMode}
-            onChangeText={setGender}
-            placeholder="Gender"
-            placeholderTextColor="#ccc"
-          />
-        </View>
+  <MaterialIcons name="wc" size={30} color="#FE660F" />
+  {editMode ? (
+    <CustomModalPicker
+      options={["Male", "Female"]}
+      selectedValue={gender}
+      onValueChange={setGender}
+      enabled={editMode}
+    />
+  ) : (
+    <TextInput
+      style={[styles.input, !editMode && styles.nonEditableText]}
+      value={gender}
+      editable={editMode}
+      onChangeText={setGender}
+      placeholder="Gender"
+      placeholderTextColor="#ccc"
+    />
+  )}
+</View>
         <View style={styles.inputContainer}>
-          <MaterialIcons name="location-on" size={24} color="#4F603B" />
-          <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
-            value={location}
-            editable={editMode}
-            onChangeText={setLocation}
-            placeholder="Location"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="cake" size={24} color="#4F603B" />
+          <MaterialIcons name="cake" size={30} color="#FE660F" />
           <TextInput
             style={[styles.input, !editMode && styles.nonEditableText]}
             value={age}
@@ -330,6 +355,29 @@ const ProfileScreen = ({ navigation }) => {
             placeholderTextColor="#ccc"
             keyboardType="numeric"
           />
+        </View>
+        <View style={styles.inputContainer}>
+          <MaterialIcons name="location-on" size={30} color="#FE660F" />
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={location}
+            editable={editMode}
+            onChangeText={setLocation}
+            placeholder="Location"
+            placeholderTextColor="#ccc"
+          />
+        </View>
+        <View style={styles.NotificationsContainer}>
+          <Text style={styles.inputSetting}>Notifications:</Text>
+          <Switch
+            value={notificationsEnabled}
+            onValueChange={toggleNotifications}
+          />
+        </View>
+        <View style={styles.PolicyContainer}>
+          <MaterialIcons name="policy" size={30} color="#FE660F" />
+          <Text style={styles.inputSetting}>Policy</Text>
+          <AntDesign name="arrowright" size={30} color="#FE660F" />
         </View>
       </View>
       {editMode ? (
@@ -341,13 +389,13 @@ const ProfileScreen = ({ navigation }) => {
       ) : (
         <>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={handleLogOut}>
-              <Text style={styles.buttonText}>Log Out</Text>
+            <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
+              <Text style={styles.buttonText}>Create Stripe Account</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
-              <Text style={styles.buttonText}>Create Stripe Account</Text>
+            <TouchableOpacity style={styles.Logoutbutton} onPress={handleLogOut}>
+              <Text style={styles.LogoutbuttonText}>Log Out</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -363,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDF3EB",
   },
   profileHeader: {
-    marginTop: 70,
+    marginTop: 45,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
@@ -378,14 +426,14 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "#4F603B",
+    borderWidth: 3,
+    borderColor: "#FE660F",
   },
   editPhotoButton: {
     position: "absolute",
     bottom: 10,
     right: 5,
-    backgroundColor: "#4F603B",
+    backgroundColor: "#FE660F",
     borderRadius: 50,
     padding: 5,
   },
@@ -404,11 +452,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4F603B',  // Ensures the inputs take up available space
+    color: '#FE660F',  // Ensures the inputs take up available space
   },
   editableInput: { // Ensures the inputs take up available space
     borderBottomWidth: 1,
-    borderBottomColor: '#4F603B',
+    borderBottomColor: '#FE660F',
     borderRadius: 5,
     padding: 3,
     marginVertical: 5,
@@ -421,33 +469,73 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#4F603B",
+    borderRadius: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: "#FE660F",
+    paddingVertical: 5,
+    height: 40,
+  },
+  NotificationsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 45,
+    borderBottomWidth: 2,
+    borderBottomColor: "#FE660F",
+    paddingVertical: 5,
+  },
+  PolicyContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: "#FE660F",
     paddingVertical: 5,
   },
   input: {
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
-    color: "#4F603B",
+    color: "#FE660F",
+  },
+  inputSetting: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 18,
+    color: "#FE660F",
+    fontWeight: "bold",
   },
   nonEditableText: {
-    color: "#4F603B",
+    color: "#FE660F",
+    fontWeight: "bold",
   },
   buttonContainer: {
     alignItems: "center",
     marginTop: 10,
   },
   button: {
-    backgroundColor: "#4F603B",
+    backgroundColor: "#FE660F",
     padding: 15,
     borderRadius: 5,
+    marginBottom: 2,
+    width: "100%",
+    alignItems: "center",
+  },
+  Logoutbutton: {
+    padding: 15,
+    borderRadius: 5,
+    borderWidth: 3,
+    borderColor: "#FE660F",
     marginBottom: 10,
     width: "100%",
     alignItems: "center",
   },
   buttonText: {
     color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  LogoutbuttonText: {
+    color: "#FE660F",
     fontSize: 16,
     fontWeight: "bold",
   },

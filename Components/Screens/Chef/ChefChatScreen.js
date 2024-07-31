@@ -1,16 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, Modal } from 'react-native';
-import { GiftedChat, Bubble, InputToolbar, Send, Actions } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, Send, Actions } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../_utils/FirebaseConfig';
 import { collection, addDoc, query, onSnapshot, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import CustomInputToolbar from '../../others/CustomInputToolbar';
 
 const ChefChatScreen = ({ route, navigation }) => {
   const { chefId, chefName, studentId, studentName, studentProfilePic } = route.params;
   const [messages, setMessages] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
   const user = FIREBASE_AUTH.currentUser;
   const storage = getStorage();
 
@@ -164,42 +166,14 @@ const ChefChatScreen = ({ route, navigation }) => {
     }
   };
 
-  const renderActions = (props) => (
-    <>
-      <Actions
-        {...props}
-        icon={() => (
-          <Ionicons name="add" size={24} color="#FE660F" />
-        )}
-        onPressActionButton={() => setModalVisible(true)}
-      />
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Choose an action</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={handleImagePick}>
-              <Ionicons name="image-outline" size={20} color="white" />
-              <Text style={styles.modalButtonText}>Send Image</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-              <Ionicons name="close-outline" size={20} color="white" />
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
+  const handleActionButtonPress = () => {
+    setModalVisible(true);
+  };
 
   const handleLongPress = (message) => {
-    if (message.user._id === user.uid) {
+    console.log('Message:', message); // Add this line for debugging
+    
+    if (message && message.user && message.user._id === user.uid) {
       Alert.alert(
         'Delete Message',
         'Are you sure you want to delete this message?',
@@ -216,48 +190,80 @@ const ChefChatScreen = ({ route, navigation }) => {
         ],
         { cancelable: true }
       );
+    } else {
+      Alert.alert('Error', 'You can only delete your own messages.');
     }
   };
+  
+  
 
   const deleteMessage = async (message) => {
     try {
+      if (!message || !message._id || !message.user || !message.user._id) {
+        console.error('Invalid message object:', message);
+        return;
+      }
+  
       const chatId = `${chefId}_${studentId}`;
       const messageRef = doc(FIREBASE_DB, 'Chats', chatId, 'Messages', message._id);
-
-      await deleteDoc(messageRef);
-
-      // Update the local state to remove the message
-      setMessages((previousMessages) =>
-        previousMessages.filter((msg) => msg._id !== message._id)
-      );
+      const messageSnap = await getDoc(messageRef);
+  
+      if (!messageSnap.exists()) {
+        console.error('Message does not exist');
+        return;
+      }
+  
+      const messageData = messageSnap.data();
+      const messageSenderId = messageData.user._id;
+  
+      if (messageSenderId === user.uid) {
+        await deleteDoc(messageRef);
+  
+        // Update local state to reflect the change
+        setMessages((previousMessages) =>
+          previousMessages.filter((msg) => msg._id !== message._id)
+        );
+      } else {
+        Alert.alert('Error', 'You can only delete your own messages.');
+      }
     } catch (error) {
       console.error('Error deleting message:', error);
-      Alert.alert('Error', 'Failed to delete message. Please try again.');
+      Alert.alert('Error', 'Failed to delete the message. Please try again.');
     }
   };
+  
+  
+  
 
-  const renderBubble = (props) => (
-    <Bubble
+  const renderActions = (props) => (
+    <Actions
       {...props}
-      wrapperStyle={{
-        left: { backgroundColor: '#FFEDD5' },
-        right: { backgroundColor: '#FE660F' },
-      }}
-      textStyle={{
-        left: { color: 'black' },
-        right: { color: 'white' },
-      }}
-      onLongPress={() => handleLongPress(props.currentMessage)}
+      icon={() => (
+        <Ionicons name="add" size={24} color="#FE660F" />
+      )}
+      onPress={handleActionButtonPress}
     />
   );
 
-  const renderInputToolbar = (props) => (
-    <InputToolbar
-      {...props}
-      containerStyle={styles.inputToolbar}
-      primaryStyle={styles.primaryInputToolbar}
-    />
-  );
+  const renderBubble = (props) => {
+    console.log('Current Message:', props.currentMessage); // Add this line for debugging
+    
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          left: { backgroundColor: '#FFEDD5' },
+          right: { backgroundColor: '#FE660F', marginBottom: 5 },
+        }}
+        textStyle={{
+          left: { color: 'black' },
+          right: { color: 'white' },
+        }}
+        onLongPress={() => handleLongPress(props.currentMessage)}
+      />
+    );
+  };
+  
 
   const renderSend = (props) => (
     <Send {...props}>
@@ -284,13 +290,35 @@ const ChefChatScreen = ({ route, navigation }) => {
       </View>
       <GiftedChat
         messages={messages}
-        onSend={(messages) => onSend(messages)}
+        onSend={onSend}
         user={getUserData()}
-        renderBubble={renderBubble}
-        renderInputToolbar={renderInputToolbar}
-        renderSend={renderSend}
         renderActions={renderActions}
+        renderBubble={renderBubble}
+        renderSend={renderSend}
+        scrollToBottom
+        renderInputToolbar={(props) => (
+          <CustomInputToolbar {...props} handleImagePick={handleImagePick} />
+        )}
       />
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Choose an action</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={handleImagePick}>
+              <Ionicons name="image-outline" size={20} color="white" />
+              <Text style={styles.modalButtonText}>Send Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <Ionicons name="close-outline" size={20} color="white" />
+              <Text style={styles.modalButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -315,15 +343,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FE660F',
-  },
-  inputToolbar: {
-    backgroundColor: '#FFEDD5',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    padding: 5,
-  },
-  primaryInputToolbar: {
-    alignItems: 'center',
   },
   sendingContainer: {
     justifyContent: 'center',

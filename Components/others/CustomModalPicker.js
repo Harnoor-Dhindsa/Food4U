@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 
-const CustomModalPicker = ({ options, selectedValue, onValueChange, enabled }) => {
+const CustomModalPicker = ({ options, selectedValue, onValueChange, enabled = true }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleSelect = (value) => {
@@ -26,13 +26,13 @@ const CustomModalPicker = ({ options, selectedValue, onValueChange, enabled }) =
         >
           <View style={styles.modalBackground}>
             <View style={styles.modalContainer}>
-              {options.map((option) => (
+              {options.map((option, index) => (
                 <TouchableOpacity
-                  key={option.value}
+                  key={index}
                   style={styles.option}
-                  onPress={() => handleSelect(option.value)}
+                  onPress={() => handleSelect(option)}
                 >
-                  <Text style={styles.optionText}>{option.label}</Text>
+                  <Text style={styles.optionText}>{option}</Text>
                 </TouchableOpacity>
               ))}
               <TouchableOpacity
