@@ -5,7 +5,7 @@ const Screen = ({navigation}) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../Images/screen3.jpg')}
+        source={require('../Images/screen.jpg')}
         style={styles.image}
         resizeMode="contain"
       />

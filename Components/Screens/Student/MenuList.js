@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: '#FFEDD5',
+    backgroundColor: '#fff',
     borderColor: '#FE660F',
     borderWidth: 2,
     shadowColor: '#000',
@@ -147,10 +147,11 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
   },
   menuDescription: {
     fontSize: 14,
-    color: 'gray',
+    color: '#888',
   },
   menuPrice: {
     fontSize: 16,
@@ -188,6 +189,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#333',
   },
   chefContact: {
     flexDirection: 'row',
