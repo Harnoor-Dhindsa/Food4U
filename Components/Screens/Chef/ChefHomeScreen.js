@@ -1,93 +1,86 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform, StyleSheet, Alert, BackHandler  } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Import Ionicons from react-native-vector-icons
-import HomeScreen from './ChefMain/HomeScreen';
-import OrderScreen from './ChefMain/OrderScreen';
-import ChefChatListScreen from './ChefMain/ChefChatListScreen';
-import ProfileScreen from './ChefMain/ProfileScreen';
-import { useFocusEffect } from '@react-navigation/native';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Platform, StyleSheet, Alert, BackHandler } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import HomeScreen from "./ChefMain/HomeScreen";
+import OrderScreen from "./ChefMain/OrderScreen";
+import ChefChatListScreen from "./ChefMain/ChefChatListScreen";
+import ProfileScreen from "./ChefMain/ProfileScreen";
+import { useFocusEffect } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator();
 
 const ChefHomeScreen = () => {
-    useFocusEffect(
-        React.useCallback(() => {
-          const onBackPress = () => {
-            Alert.alert(
-              "Exit App",
-              "Are you sure you want to exit the app?",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "OK", onPress: () => BackHandler.exitApp() }
-              ]
-            );
-            return true; // Prevent default behavior (back navigation)
-          };
-    
-          BackHandler.addEventListener("hardwareBackPress", onBackPress);
-    
-          return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
-        }, [])
-      );
-    return (
-        <Tab.Navigator
-            screenOptions={({ route }) => ({
-                tabBarIcon: ({ color, size }) => {
-                    let iconName;
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert("Exit App", "Are you sure you want to exit the app?", [
+          { text: "Cancel", style: "cancel" },
+          { text: "OK", onPress: () => BackHandler.exitApp() },
+        ]);
+        return true;
+      };
 
-                    if (route.name === 'Home') {
-                        iconName = 'home';
-                    } else if (route.name === 'Orders') {
-                        iconName = 'bookmark';
-                    } else if (route.name === 'Chat') {
-                        iconName = 'chatbox';
-                    } else if (route.name === 'Profile') {
-                        iconName = 'person';
-                    }
+      BackHandler.addEventListener("hardwareBackPress", onBackPress);
 
-                    return <Ionicons name={iconName} color={color} size={size} />;
-                },
-                tabBarActiveTintColor: '#FE660F',
-                tabBarInactiveTintColor: 'grey',
-                tabBarStyle: Platform.OS === 'ios' ? styles.tabBarIOS : styles.tabBar,
-                tabBarLabelStyle: Platform.OS === 'ios' ? styles.tabBarLabelIOS : styles.tabBarLabel,
-            })}
-        >
-            <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-            <Tab.Screen name="Orders" component={OrderScreen} options={{ headerShown: false }} />
-            <Tab.Screen name="Chat" component={ChefChatListScreen} options={{ headerShown: false }} />
-            <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-        </Tab.Navigator>
-    );
+      return () =>
+        BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+    }, [])
+  );
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+
+          if (route.name === "Home") {
+            iconName = "home-outline";
+          } else if (route.name === "Orders") {
+            iconName = "bookmark-outline";
+          } else if (route.name === "Chat") {
+            iconName = "chatbox-outline";
+          } else if (route.name === "Profile") {
+            iconName = "person-outline";
+          }
+
+          return <Ionicons name={iconName} size={30} color={color} />;
+        },
+        tabBarActiveTintColor: "#FE660F",
+        tabBarInactiveTintColor: "gray",
+        headerShown: false,
+        tabBarStyle: {
+          paddingVertical: Platform.OS === "ios" ? 10 : 5,
+          height: 85,
+          borderTopWidth: 3,
+          borderTopColor: "#FE660F",
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "bold",
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Orders" component={OrderScreen} />
+      <Tab.Screen name="Chat" component={ChefChatListScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
 };
 
 const styles = StyleSheet.create({
-    tabBar: {
-        height: "9%",
-        backgroundColor: 'white',
-        borderTopWidth: 3,
-        borderTopColor: '#FE660F',
-        paddingVertical: 5,
-    },
-    tabBarIOS: {
-        height: '10%',
-        backgroundColor: 'white',
-        borderTopWidth: 3,
-        borderTopColor: '#FE660F',
-        paddingBottom: 20,
-        paddingTop: 5,
-    },
-    tabBarLabel: {
-        fontSize: 13,
-        fontWeight: 'bold',
-        marginBottom: 8,
-    },
-    tabBarLabelIOS: {
-        fontSize: 13,
-        fontWeight: 'bold',
-        marginBottom: 12,  // Adjusted margin for iOS
-    },
+  tabBar: {
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 2,
+    borderTopColor: "#FE660F",
+    height: Platform.OS === "ios" ? 65 : 60,
+    paddingBottom: 5,
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
 });
 
 export default ChefHomeScreen;

@@ -49,7 +49,7 @@ const Checkout = () => {
       }
 
       try {
-        const response = await fetch("http://192.168.1.74:3000/payment-sheet", {
+        const response = await fetch("http://192.168.1.76:3000/payment-sheet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

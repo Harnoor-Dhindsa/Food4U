@@ -68,28 +68,46 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleSaveProfile = async () => {
-    if (user) {
-      const profileData = {
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        gender,
-        age,
-        location,
-        stripeAccountId, // Include the Stripe account ID
-      };
+    if (
+      !firstName ||
+      !lastName ||
+      !phoneNumber ||
+      !gender ||
+      !age ||
+      !location
+    ) {
+      Alert.alert("Validation Error", "All fields are mandatory.");
+      return;
+    }
 
-      try {
-        const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
-        await setDoc(userRef, profileData, { merge: true });
-        setEditMode(false);
-      } catch (error) {
-        console.error("Error updating profile:", error);
-      }
+    const ageNumber = parseInt(age, 10);
+    if (isNaN(ageNumber) || ageNumber < 0 || ageNumber > 120) {
+      Alert.alert(
+        "Validation Error",
+        "Please enter a valid age between 0 and 120."
+      );
+      return;
+    }
+
+    const profileData = {
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      gender,
+      age,
+      location,
+      profilePic,
+    };
+
+    try {
+      const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+      await setDoc(userRef, profileData, { merge: true });
+      setEditMode(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
     }
   };
-
 
   const handleLogOut = () => {
     FIREBASE_AUTH.signOut()
@@ -178,13 +196,13 @@ const ProfileScreen = ({ navigation }) => {
   const createStripeAccount = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.1.74:3000/create-connected-account",
+        "http://192.168.1.76:3000/create-connected-account",
         { email }
       );
       const { account } = response.data;
 
       const accountLinkResponse = await axios.post(
-        "http://192.168.1.74:3000/create-account-link",
+        "http://192.168.1.76:3000/create-account-link",
         { account_id: account.id }
       );
 
@@ -207,6 +225,7 @@ const ProfileScreen = ({ navigation }) => {
           gender,
           age,
           location,
+          profilePic,
           stripeAccountId: account.id, // Save the Stripe account ID
         };
 
@@ -222,10 +241,9 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <View style={styles.profileContainer}>
         <Image
           key={profilePic}
@@ -285,34 +303,31 @@ const ProfileScreen = ({ navigation }) => {
             onChangeText={handlePhoneNumberChange}
             placeholder="Phone Number"
             placeholderTextColor="#ccc"
-            keyboardType="numeric"
+            keyboardType="phone-pad"
           />
         </View>
-        <View style={styles.row}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Gender</Text>
-            <CustomModalPicker
-              options={[
-                { label: "Male", value: "Male" },
-                { label: "Female", value: "Female" },
-              ]}
-              selectedValue={gender}
-              onValueChange={setGender}
-              enabled={editMode}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Age</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.nonEditableText]}
-              value={age}
-              editable={editMode}
-              onChangeText={setAge}
-              placeholder="Age"
-              placeholderTextColor="#ccc"
-              keyboardType="numeric"
-            />
-          </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Gender</Text>
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={gender}
+            editable={editMode}
+            onChangeText={setGender}
+            placeholder="Gender"
+            placeholderTextColor="#ccc"
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Age</Text>
+          <TextInput
+            style={[styles.input, !editMode && styles.nonEditableText]}
+            value={age}
+            editable={editMode}
+            onChangeText={setAge}
+            placeholder="Age"
+            placeholderTextColor="#ccc"
+            keyboardType="numeric"
+          />
         </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Location</Text>
@@ -325,26 +340,36 @@ const ProfileScreen = ({ navigation }) => {
             placeholderTextColor="#ccc"
           />
         </View>
+      </View>
+      {editMode ? (
         <View style={styles.buttonContainer}>
-          {editMode ? (
-            <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-              <Text style={styles.buttonText}>Save Profile</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-              <Text style={styles.buttonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.button} onPress={handleLogOut}>
-            <Text style={styles.buttonText}>Log Out</Text>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSaveProfile}
+          >
+            <Text style={styles.buttonText}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => setEditMode(false)}
+          >
+            <Text style={styles.buttonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
-        {!editMode && (
-          <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
-            <Text style={styles.buttonText}>Create Stripe Account</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      ) : (
+        <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+          <Text style={styles.buttonText}>Edit Profile</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.stripeButton}
+        onPress={createStripeAccount}
+      >
+        <Text style={styles.buttonText}>Create Stripe Account</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -352,81 +377,96 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#FFF",
+    padding: 16,
   },
   profileContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   profilePhoto: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 2,
-    borderColor: "#5D3FD3",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
   },
   choosePhotoButton: {
-    marginTop: 10,
+    backgroundColor: "#FFA500",
     padding: 10,
-    backgroundColor: "#5D3FD3",
     borderRadius: 5,
   },
-  buttonText: {
-    color: "#FFF",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
   infoContainer: {
-    backgroundColor: "#FFF",
-    padding: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    marginBottom: 20,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   inputContainer: {
-    flex: 1,
     marginBottom: 10,
-    paddingRight: 5,
   },
   label: {
-    fontWeight: "bold",
+    fontSize: 16,
     color: "#333",
     marginBottom: 5,
   },
   input: {
-    backgroundColor: "#EDF3EB",
-    padding: 10,
-    borderRadius: 5,
     borderWidth: 1,
     borderColor: "#ccc",
-    color: "#333",
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#FFF",
+    fontSize: 16,
   },
   nonEditableText: {
     backgroundColor: "#F0F0F0",
-    color: "#999",
   },
   buttonContainer: {
-    marginTop: 20,
     flexDirection: "row",
     justifyContent: "space-between",
+    marginVertical: 10,
   },
-  button: {
+  saveButton: {
+    backgroundColor: "#FFA500",
     padding: 10,
-    backgroundColor: "#5D3FD3",
     borderRadius: 5,
-    width: "48%",
+    flex: 1,
+    marginRight: 5,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+    alignItems: "center",
+  },
+  editButton: {
+    backgroundColor: "#FFA500",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  logoutButton: {
+    backgroundColor: "#FF6347",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  stripeButton: {
+    backgroundColor: "#32CD32",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 16,
   },
 });
 
 export default ProfileScreen;
+
