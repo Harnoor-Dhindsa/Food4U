@@ -69,6 +69,7 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.safeContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
+      <Text style={styles.headingmain}>Menus</Text>
       <FlatList
         data={menus}
         renderItem={renderItem}
@@ -120,6 +121,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#FE660F',
     alignItems: 'center',
   },
+  headingmain: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#4A4A4A",
+    marginLeft: 20,
+    marginTop: 20,
+  },
   welcomeMessage: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -127,6 +135,7 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingVertical: 20,
+    paddingHorizontal: 10,
   },
   menuContainer: {
     flexDirection: 'row',
@@ -137,7 +146,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEDD5',
     borderWidth: 1,
     borderColor: '#FE660F',
-    marginHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   menuContent: {
     flex: 1,
@@ -148,10 +161,11 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
   },
   days: {
     fontSize: 14,
-    color: 'gray',
+    color: '#666',
   },
   price: {
     fontSize: 16,
@@ -186,11 +200,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalText: {
     fontSize: 18,
     marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   modalButton: {
     width: '100%',
@@ -210,6 +230,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#FE660F',
     alignItems: 'center',
   },
   modalCancelButtonText: {

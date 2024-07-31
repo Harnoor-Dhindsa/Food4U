@@ -99,14 +99,32 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleLogOut = () => {
-    FIREBASE_AUTH.signOut()
-      .then(() => {
-        navigation.replace("Screen");
-      })
-      .catch((error) => {
-        alert("Error in logging out");
-      });
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: () => {
+            FIREBASE_AUTH.signOut()
+              .then(() => {
+                navigation.replace('Screen'); // Replace 'Screen' with the actual screen name you want to navigate to
+              })
+              .catch((error) => {
+                alert('Error in logging out');
+              });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
+  
 
   const handleChoosePhoto = async () => {
     let permissionResult =

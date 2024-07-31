@@ -24,8 +24,10 @@ const EditMenu = ({ route, navigation }) => {
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState("");
   const [dessert, setDessert] = useState(menu?.dessert || "");
-  const [dessertQuantity, setDessertQuantity] = useState("");
-  const [dessertDays, setDessertDays] = useState("");
+  const [dessertQuantity, setDessertQuantity] = useState(
+    menu?.dessertQuantity || ""
+  );
+  const [dessertDays, setDessertDays] = useState(menu?.dessertDays || "");
   const [days, setDays] = useState(menu?.days || []);
   const [dailyPrice, setDailyPrice] = useState(menu?.dailyPrice || "");
   const [weeklyPrice, setWeeklyPrice] = useState(menu?.weeklyPrice || "");
@@ -83,7 +85,6 @@ const EditMenu = ({ route, navigation }) => {
   const handleSaveMenu = async () => {
     if (
       heading.trim() === "" ||
-      items.length < 3 ||
       days.length === 0 ||
       dailyPrice.trim() === "" ||
       weeklyPrice.trim() === "" ||
@@ -94,7 +95,7 @@ const EditMenu = ({ route, navigation }) => {
     ) {
       Alert.alert(
         "Error",
-        "Please fill in all required fields and ensure at least 3 items are added. If you provide a dessert, make sure to enter quantity and days."
+        "Please fill in all required fields. If you provide a dessert, make sure to enter quantity and days."
       );
       return;
     }
@@ -177,15 +178,7 @@ const EditMenu = ({ route, navigation }) => {
             <Icon name="add" size={24} color="#fff" />
           </TouchableOpacity>
         </View>,
-        ...items.map((item, index) => renderItem({ item, index })),
-      ],
-      renderItem: ({ item, index }) => {
-        if (index === 0) {
-          return item; // Render the input container
-        } else {
-          return renderItem({ item, index: index - 1 }); // Render the list items
-        }
-      },
+      ].concat(items),
     },
     {
       title: "Dessert (optional)",
@@ -197,7 +190,7 @@ const EditMenu = ({ route, navigation }) => {
           onChangeText={(text) => setDessert(text)}
           style={styles.input}
         />,
-        dessert ? (
+        (dessert || dessertQuantity || dessertDays) && (
           <>
             <TextInput
               key="dessertQuantity"
@@ -214,7 +207,7 @@ const EditMenu = ({ route, navigation }) => {
               style={styles.input}
             />
           </>
-        ) : null,
+        ),
       ],
     },
     {
@@ -331,10 +324,10 @@ const EditMenu = ({ route, navigation }) => {
         sections={sections}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index, section }) => {
-          if (section.title === "Save Menu") {
-            return item; // Render the save button
+          if (section.title === "Add Item *" && index > 0) {
+            return renderItem({ item, index: index - 1 });
           }
-          return item; // Render all other items
+          return item;
         }}
         renderSectionHeader={({ section: { title } }) => (
           <Text style={styles.sectionHeader}>{title}</Text>
@@ -412,12 +405,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    margin: 12,
     padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    backgroundColor: "#fff",
-    borderRadius: 8,
   },
   itemText: {
     fontSize: 16,

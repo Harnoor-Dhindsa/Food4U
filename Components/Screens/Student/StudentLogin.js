@@ -101,8 +101,8 @@ const StudentLogin = ({ navigation }) => {
         <TouchableOpacity onPress={goToFront} style={styles.backButton}>
           <Ionicons name="arrow-back" size={34} color="black" />
         </TouchableOpacity>
-        <Text style={styles.heading}>Welcome Back! Buddy</Text>
-        <Text style={styles.subheading}>It's nice to have you back</Text>
+        <Text style={styles.heading}>Welcome Back!</Text>
+        <Text style={styles.subheading}>It's nice to have you back buddy</Text>
         <View style={styles.inputContainer}>
           <Ionicons name="mail" size={24} color="black" style={styles.icon} />
           <TextInput

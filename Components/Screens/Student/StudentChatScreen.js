@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Alert, Modal, Image } from 'react-native';
 import { GiftedChat, Bubble, Send, Actions } from 'react-native-gifted-chat';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -47,7 +47,7 @@ const StudentChatScreen = ({ route, navigation }) => {
           user: {
             _id: firebaseData.user._id,
             name: firebaseData.user.name,
-            avatar: firebaseData.user.avatar,
+            avatar: firebaseData.user.avatar || getInitials(firebaseData.user.name),
           },
           image: firebaseData.image || '',
         };
@@ -171,8 +171,6 @@ const StudentChatScreen = ({ route, navigation }) => {
   };
 
   const handleLongPress = (message) => {
-    console.log('Message:', message); // Add this line for debugging
-    
     if (message && message.user && message.user._id === user.uid) {
       Alert.alert(
         'Delete Message',
@@ -194,8 +192,6 @@ const StudentChatScreen = ({ route, navigation }) => {
       Alert.alert('Error', 'You can only delete your own messages.');
     }
   };
-  
-  
 
   const deleteMessage = async (message) => {
     try {
@@ -203,22 +199,22 @@ const StudentChatScreen = ({ route, navigation }) => {
         console.error('Invalid message object:', message);
         return;
       }
-  
+
       const chatId = `${chefId}_${studentId}`;
       const messageRef = doc(FIREBASE_DB, 'Chats', chatId, 'Messages', message._id);
       const messageSnap = await getDoc(messageRef);
-  
+
       if (!messageSnap.exists()) {
         console.error('Message does not exist');
         return;
       }
-  
+
       const messageData = messageSnap.data();
       const messageSenderId = messageData.user._id;
-  
+
       if (messageSenderId === user.uid) {
         await deleteDoc(messageRef);
-  
+
         // Update local state to reflect the change
         setMessages((previousMessages) =>
           previousMessages.filter((msg) => msg._id !== message._id)
@@ -231,9 +227,6 @@ const StudentChatScreen = ({ route, navigation }) => {
       Alert.alert('Error', 'Failed to delete the message. Please try again.');
     }
   };
-  
-  
-  
 
   const renderActions = (props) => (
     <Actions
@@ -245,25 +238,20 @@ const StudentChatScreen = ({ route, navigation }) => {
     />
   );
 
-  const renderBubble = (props) => {
-    console.log('Current Message:', props.currentMessage); // Add this line for debugging
-    
-    return (
-      <Bubble
-        {...props}
-        wrapperStyle={{
-          left: { backgroundColor: '#FFEDD5' },
-          right: { backgroundColor: '#FE660F', marginBottom: 5 },
-        }}
-        textStyle={{
-          left: { color: 'black' },
-          right: { color: 'white' },
-        }}
-        onLongPress={() => handleLongPress(props.currentMessage)}
-      />
-    );
-  };
-  
+  const renderBubble = (props) => (
+    <Bubble
+      {...props}
+      wrapperStyle={{
+        left: { backgroundColor: '#FFEDD5' },
+        right: { backgroundColor: '#FE660F', marginBottom: 5 },
+      }}
+      textStyle={{
+        left: { color: 'black' },
+        right: { color: 'white' },
+      }}
+      onLongPress={() => handleLongPress(props.currentMessage)}
+    />
+  );
 
   const renderSend = (props) => (
     <Send {...props}>
@@ -273,48 +261,69 @@ const StudentChatScreen = ({ route, navigation }) => {
     </Send>
   );
 
-  const getUserData = () => ({
-    _id: user.uid,
-    name: user.displayName || user.email,
-    avatar: user.photoURL,
-  });
+  const renderMessageImage = (props) => (
+    <View style={{ borderRadius: 15, padding: 2 }}>
+      <Image
+        source={{ uri: props.currentMessage.image }}
+        style={{ width: 200, height: 200, borderRadius: 15, resizeMode: 'cover' }}
+      />
+    </View>
+  );
+
+  const getInitials = (name) => {
+    const initials = name?.split(' ').map((word) => word[0]).join('');
+    return `https://ui-avatars.com/api/?name=${initials}&background=random&color=fff`;
+  };
+
+  const CustomAvatar = ({ avatar }) => {
+    return (
+      <Image
+        style={{ width: 32, height: 32, borderRadius: 16 }}
+        source={{ uri: avatar || getInitials('User') }}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={Platform.OS === 'android' ? 'dark-content' : 'dark-content'} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FE660F" />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{chefName}</Text>
       </View>
       <GiftedChat
         messages={messages}
-        onSend={onSend}
-        user={getUserData()}
-        renderActions={renderActions}
+        onSend={(messages) => onSend(messages)}
+        user={{
+          _id: user.uid,
+          name: user.displayName || user.email,
+          avatar: user.photoURL || getInitials(user.displayName || user.email),
+        }}
         renderBubble={renderBubble}
         renderSend={renderSend}
-        scrollToBottom
+        alwaysShowSend
+        renderActions={renderActions}
         renderInputToolbar={(props) => (
-          <CustomInputToolbar {...props} handleImagePick={handleImagePick} />
+          <CustomInputToolbar {...props} />
         )}
+        renderMessageImage={renderMessageImage}
+        renderAvatar={(props) => <CustomAvatar avatar={props.currentMessage.user.avatar} />}
       />
       <Modal
+        animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Choose an action</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={handleImagePick}>
-              <Ionicons name="image-outline" size={20} color="white" />
-              <Text style={styles.modalButtonText}>Send Image</Text>
+            <TouchableOpacity onPress={handleImagePick} style={styles.modalButton}>
+              <Ionicons name="image" size={24} color="#FE660F" />
+              <Text style={styles.modalButtonText}>Pick Image</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-              <Ionicons name="close-outline" size={20} color="white" />
-              <Text style={styles.modalButtonText}>Cancel</Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalCloseButton}>
+              <Text style={styles.modalCloseButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -326,70 +335,58 @@ const StudentChatScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EDF3EB',
-    paddingTop: Platform.OS === 'android' ? 0 : 50,
+    backgroundColor: 'white',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: '#FE660F',
-  },
-  backButton: {
-    marginRight: 10,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingHorizontal: 10,
+    paddingVertical: 15,
+    marginTop: 50,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FE660F',
+    marginLeft: 10,
   },
   sendingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginBottom: 5,
+    marginRight: 5,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
+    width: '80%',
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#FE660F',
   },
   modalButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FE660F',
-    padding: 15,
-    borderRadius: 10,
-    margin: 10,
-    width: 150,
-    justifyContent: 'center',
+    marginBottom: 20,
   },
   modalButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
     marginLeft: 10,
+  },
+  modalCloseButton: {
+    marginTop: 10,
+  },
+  modalCloseButtonText: {
+    fontSize: 18,
+    color: '#FE660F',
   },
 });
 
