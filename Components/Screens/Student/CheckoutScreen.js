@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../../_utils/FirebaseConfig";
-import { doc, setDoc, getDoc, addDoc, collection } from "firebase/firestore";
+import { doc, getDoc, addDoc, collection } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const Checkout = () => {
@@ -24,7 +24,15 @@ const Checkout = () => {
   const navigation = useNavigation();
   const { selectedMenu } = route.params || {};
   const { cart, removeFromCart } = useContext(AppContext);
-  const { price, chefStripeAccountId, pickupAddress, delivery, chefId, heading, days } = selectedMenu || {};
+  const {
+    price,
+    chefStripeAccountId,
+    pickupAddress,
+    delivery,
+    chefId,
+    heading,
+    days,
+  } = selectedMenu || {};
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const [chosenPlan, setChosenPlan] = useState("");
@@ -37,7 +45,7 @@ const Checkout = () => {
   useEffect(() => {
     if (selectedMenu) {
       setChosenPlan(selectedMenu.selectedPlan);
-      setTotalPrice(selectedMenu.price);
+      setTotalPrice(Number(selectedMenu.price)); // Ensure price is treated as a number
     }
   }, [selectedMenu]);
 
@@ -49,20 +57,23 @@ const Checkout = () => {
       }
 
       try {
-        const response = await fetch("http://192.168.1.74:3000/payment-sheet", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: parseInt(price) * 100, // Ensure amount is in cents
-            currency: "cad",
-            chefStripeAccountId: chefStripeAccountId,
-          }),
-        });
+        const response = await fetch(
+          "http://10.189.129.43:3000/payment-sheet",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: parseInt(price) * 100, // Ensure amount is in cents
+              currency: "cad",
+              chefStripeAccountId: chefStripeAccountId,
+            }),
+          }
+        );
 
         const data = await response.json();
-        console.log("Response data:", data); // Log the response data
+        console.log("Response data:", data);
 
         const { paymentIntent, ephemeralKey, customer } = data;
 
@@ -75,7 +86,7 @@ const Checkout = () => {
           ephemeralKeySecret: ephemeralKey,
           customerId: customer,
           returnURL: "your-app://return-url", // Ensure this URL is correct
-          merchantDisplayName: "Your Merchant Name", // Add your merchant display name here
+          merchantDisplayName: "Your Merchant Name",
         });
 
         if (initError) {
@@ -100,19 +111,20 @@ const Checkout = () => {
         throw new Error(error.message);
       } else {
         Alert.alert("Success", "Payment successful!");
-  
+
         const user = FIREBASE_AUTH.currentUser;
         if (user) {
-          const { uid, displayName, email } = user;
-  
-          // Assuming firstName and lastName are stored as custom claims or in the Firestore user document
-          const userDoc = await getDoc(doc(FIREBASE_DB, "StudentsProfiles", uid));
+          const { uid, email } = user;
+
+          const userDoc = await getDoc(
+            doc(FIREBASE_DB, "StudentsProfiles", uid)
+          );
           const { firstName, lastName } = userDoc.data() || {};
-  
+
           if (!firstName || !lastName) {
             throw new Error("User's first name or last name is missing.");
           }
-  
+
           await addDoc(collection(FIREBASE_DB, "orders"), {
             days,
             heading,
@@ -122,11 +134,12 @@ const Checkout = () => {
             chosenPlan,
             totalPrice,
             selectedOption,
-            deliveryDetails: selectedOption === "delivery" ? deliveryDetails : pickupAddress,
+            deliveryDetails:
+              selectedOption === "delivery" ? deliveryDetails : pickupAddress,
             email,
             createdAt: new Date(),
           });
-  
+
           navigation.goBack();
         }
       }
@@ -136,7 +149,6 @@ const Checkout = () => {
       setLoading(false);
     }
   };
-  
 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
@@ -156,17 +168,19 @@ const Checkout = () => {
         </TouchableOpacity>
         <Text style={styles.heading}>Checkout</Text>
       </View>
-      <Text style={styles.sectionTitle}>Chosen Menu</Text>
+      <Text style={styles.sectionTitle}>Selected Menu Items</Text>
     </>
   );
 
   const renderFooter = () => (
     <>
-      <Text style={styles.sectionTitle}>Chosen Plan</Text>
+      <Text style={styles.sectionTitle}>Selected Plan</Text>
       <View style={styles.planContainer}>
         <Text style={styles.planText}>{chosenPlan}</Text>
       </View>
-      <Text style={styles.totalPrice}>Total Price: ${totalPrice}</Text>
+      <Text style={styles.totalPrice}>
+        Total Price: ${totalPrice.toFixed(2)}
+      </Text>
     </>
   );
 
@@ -185,7 +199,10 @@ const Checkout = () => {
         <Text style={styles.deliveryOptionsTitle}>Delivery Options</Text>
         {pickupAddress && (
           <TouchableOpacity
-            style={[styles.optionButton, selectedOption === "pickup" && styles.selectedOptionButton]}
+            style={[
+              styles.optionButton,
+              selectedOption === "pickup" && styles.selectedOptionButton,
+            ]}
             onPress={() => setSelectedOption("pickup")}
           >
             <Text style={styles.optionText}>Pickup</Text>
@@ -193,7 +210,10 @@ const Checkout = () => {
         )}
         {delivery && (
           <TouchableOpacity
-            style={[styles.optionButton, selectedOption === "delivery" && styles.selectedOptionButton]}
+            style={[
+              styles.optionButton,
+              selectedOption === "delivery" && styles.selectedOptionButton,
+            ]}
             onPress={() => setSelectedOption("delivery")}
           >
             <Text style={styles.optionText}>Delivery</Text>
@@ -223,7 +243,13 @@ const Checkout = () => {
         ) : (
           paymentInitialized && (
             <TouchableOpacity
-              style={styles.placeOrderButton}
+              style={[
+                styles.placeOrderButton,
+                {
+                  opacity:
+                    selectedOption === "delivery" && !deliveryDetails ? 0.5 : 1,
+                },
+              ]}
               onPress={handlePayment}
               disabled={selectedOption === "delivery" && !deliveryDetails}
             >
@@ -245,20 +271,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    backgroundColor: "#EDF3EB",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+    elevation: 2,
   },
   backButton: {
     padding: 8,
   },
   heading: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#4A4A4A",
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
     marginVertical: 8,
     marginLeft: 16,
     color: "#FE660F",
@@ -267,110 +297,102 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#DDD",
+    backgroundColor: "#FFF",
   },
   itemName: {
     fontSize: 16,
     color: "#4A4A4A",
   },
   itemQuantity: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#4A4A4A",
   },
   planContainer: {
-    padding: 16,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#DDD",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: "#FFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   planText: {
     fontSize: 16,
-    fontWeight: "bold",
     color: "#4A4A4A",
   },
   totalPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#4A4A4A",
-    textAlign: "center",
-    marginVertical: 16,
+    fontSize: 18,
+    fontWeight: "600",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   deliveryOptionsContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: "#FFF",
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#DDD",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   deliveryOptionsTitle: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#4A4A4A",
-    marginBottom: 8,
   },
   optionButton: {
     padding: 12,
+    borderRadius: 4,
+    backgroundColor: "#F5F5F5",
     marginVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    alignItems: "center",
-    backgroundColor: "#FFF",
   },
   selectedOptionButton: {
-    borderColor: "#FE660F",
-    backgroundColor: "#FFE5D1",
+    backgroundColor: "#FE660F",
   },
   optionText: {
     fontSize: 16,
     color: "#4A4A4A",
   },
   addressContainer: {
-    marginTop: 16,
+    marginTop: 8,
   },
   addressLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: "600",
     color: "#4A4A4A",
-    marginBottom: 8,
   },
   addressText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#4A4A4A",
   },
   addressInput: {
     borderWidth: 1,
     borderColor: "#DDD",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: "#4A4A4A",
+    borderRadius: 4,
+    padding: 8,
+    marginTop: 4,
+    fontSize: 14,
+    backgroundColor: "#FFF",
   },
   footer: {
     padding: 16,
     backgroundColor: "#FFF",
+    borderTopWidth: 1,
+    borderTopColor: "#DDD",
   },
   placeOrderButton: {
-    padding: 16,
-    borderRadius: 8,
     backgroundColor: "#FE660F",
+    padding: 16,
+    borderRadius: 4,
     alignItems: "center",
   },
   placeOrderButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
     color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
-export default () => (
-  <StripeProvider publishableKey="pk_test_51POuNq2KqukMgC6pFkXCoiuutre7lxD0SiP00uRdvNFecGzQMuAX9bJsFlC3Jklgr94eOkWnp2m6GH27l3ijdSoL00DIkImryA">
-    <Checkout />
-  </StripeProvider>
-);
+export default Checkout;
