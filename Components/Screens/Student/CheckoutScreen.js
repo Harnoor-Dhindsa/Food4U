@@ -58,7 +58,7 @@ const Checkout = () => {
 
       try {
         const response = await fetch(
-          "http://10.189.129.43:3000/payment-sheet",
+          "http://10.187.218.65:3000/payment-sheet",
           {
             method: "POST",
             headers: {
@@ -174,7 +174,7 @@ const Checkout = () => {
 
   const renderFooter = () => (
     <>
-      <Text style={styles.sectionTitle}>Selected Plan</Text>
+      <Text style={styles.sectionTitle1}>Selected Plan</Text>
       <View style={styles.planContainer}>
         <Text style={styles.planText}>{chosenPlan}</Text>
       </View>
@@ -292,6 +292,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginLeft: 16,
     color: "#FE660F",
+  },
+  sectionTitle1: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginVertical: 8,
+    marginLeft: 16,
+    color: "#FE660F",
+    paddingTop: 20,
   },
   itemContainer: {
     flexDirection: "row",
