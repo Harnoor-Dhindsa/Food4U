@@ -71,18 +71,25 @@ const styles = StyleSheet.create({
   tabBar: {
     height: "9%",
     backgroundColor: 'white',
-    borderTopWidth: 3,
-    borderTopColor: '#FE660F',
     paddingVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 2, // This is for Android
   },
   tabBarIOS: {
     height: '10%',
     backgroundColor: 'white',
-    borderTopWidth: 3,
-    borderTopColor: '#FE660F',
     paddingBottom: 20,
     paddingTop: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 2, // This is for Android
   },
+  
   tabBarLabel: {
     fontSize: 13,
     fontWeight: 'bold',

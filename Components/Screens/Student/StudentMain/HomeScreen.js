@@ -117,6 +117,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.headingmain}>Home</Text>
       <View style={styles.searchBarContainer}>
         <Ionicons
           name="search"
@@ -197,7 +198,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#FFF",
     paddingTop: Platform.OS === "ios" ? 40 : 20,
   },
   searchBarContainer: {
@@ -210,11 +211,18 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowRadius: 10,
     elevation: 5,
   },
   searchIcon: {
     paddingLeft: 10,
+  },
+  headingmain: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#000",
+    marginLeft: 20,
+    marginTop: 20,
   },
   searchBar: {
     flex: 1,
@@ -263,7 +271,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#000",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,

@@ -39,7 +39,7 @@ const ProfileScreen = ({ navigation }) => {
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const [profilePic, setProfilePic] = useState(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [view, setView] = useState("profile");
 
   const user = FIREBASE_AUTH.currentUser;
@@ -63,7 +63,7 @@ const ProfileScreen = ({ navigation }) => {
       setAge(profileData.age || "");
       setLocation(profileData.location || "");
       setProfilePic(profileData.profilePic || null);
-      setNotificationsEnabled(profileData.notificationsEnabled || false);
+      setNotificationsEnabled(profileData.notificationsEnabled || true);
     } else {
       console.log("No such document!");
     }
@@ -198,21 +198,40 @@ const ProfileScreen = ({ navigation }) => {
 
   const toggleNotifications = async (value) => {
     setNotificationsEnabled(value);
+  
     if (value) {
+      // Request notification permissions
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") {
         Alert.alert("Permission for notifications was denied");
         setNotificationsEnabled(false);
+        return; // Exit early if permissions are not granted
       }
-    }
-
-    if (user) {
-      const profileData = {
-        notificationsEnabled: value,
-      };
-
-      const userRef = doc(FIREBASE_DB, "StudentsProfiles", user.uid);
-      await setDoc(userRef, profileData, { merge: true });
+  
+      // Get the push token
+      const token = await Notifications.getExpoPushTokenAsync();
+      
+      // Update the user's profile with the token
+      if (user) {
+        const profileData = {
+          notificationsEnabled: value,
+          expoPushToken: token, // Store the actual push token
+        };
+  
+        const userRef = doc(FIREBASE_DB, "StudentsProfiles", user.uid);
+        await setDoc(userRef, profileData, { merge: true });
+      }
+    } else {
+      // Disable notifications and clear the push token
+      if (user) {
+        const profileData = {
+          notificationsEnabled: value,
+          expoPushToken: null, // Set token to null when notifications are disabled
+        };
+  
+        const userRef = doc(FIREBASE_DB, "StudentsProfiles", user.uid);
+        await setDoc(userRef, profileData, { merge: true });
+      }
     }
   };
 
@@ -414,7 +433,7 @@ const ProfileScreen = ({ navigation }) => {
         ) : (
           <View style={styles.profileHeader}>
             <Image
-              source={{ uri: profilePic || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" }}
+              source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
               style={styles.mprofilePhoto}
             />
             <Text style={styles.name}>
@@ -472,7 +491,7 @@ const ProfileScreen = ({ navigation }) => {
             <View style={styles.editForm}>
               <TouchableOpacity style={styles.aprofilePhoto}>
                 <Image
-                  source={{ uri: profilePic || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" }}
+                  source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
                   style={styles.profilePhoto}
                 />
                 <TouchableOpacity onPress={handleChoosePhoto} style={styles.choosephoto}>
@@ -561,7 +580,7 @@ const ProfileScreen = ({ navigation }) => {
             <View>
               <TouchableOpacity style={styles.aprofilePhoto}>
                 <Image
-                  source={{ uri: profilePic || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" }}
+                  source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
                   style={styles.profilePhoto}
                 />
               </TouchableOpacity>
@@ -716,7 +735,9 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#F",
+    borderWidth: 2,
+    borderColor: "#FE660F",
     padding: 10,
     alignItems: "center",
     justifyContent: "center",

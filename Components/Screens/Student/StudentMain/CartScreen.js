@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -7,20 +7,32 @@ import {
   TouchableOpacity,
   Image,
   Platform,
+  Modal,
 } from "react-native";
 import { AppContext } from "../../../others/AppContext";
 import { Ionicons } from "@expo/vector-icons";
 
 const CartScreen = ({ navigation }) => {
   const { cart, removeFromCart } = useContext(AppContext);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedMenu, setSelectedMenu] = useState(null);
 
   const navigateToCheckout = (menu) => {
     console.log("Navigating to Checkout with menu:", menu);
     navigation.navigate("Checkout", { selectedMenu: menu });
   };
 
-  const handleRemoveFromCart = (menu) => {
-    removeFromCart(menu);
+  const handleRemoveFromCart = () => {
+    if (selectedMenu) {
+      removeFromCart(selectedMenu); // Pass the selected menu to removeFromCart
+      setModalVisible(false); // Close the modal after removal
+      setSelectedMenu(null); // Reset the selected menu
+    }
+  };
+
+  const handleLongPress = (menu) => {
+    setSelectedMenu(menu); // Set the selected menu
+    setModalVisible(true);
   };
 
   const renderItem = ({ item }) => (
@@ -28,6 +40,7 @@ const CartScreen = ({ navigation }) => {
       <TouchableOpacity
         style={styles.menuInfo}
         onPress={() => navigateToCheckout(item)}
+        onLongPress={() => handleLongPress(item)}
       >
         {item.avatars && item.avatars.length > 0 ? (
           <Image
@@ -42,23 +55,56 @@ const CartScreen = ({ navigation }) => {
           <Text style={styles.itemPlan}>
             Selected Plan: {item.selectedPlan}
           </Text>
-          <Text style={styles.menuPrice}>${item.price}</Text>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => handleRemoveFromCart(item)}>
-        <Ionicons name="trash" size={24} color="red" />
-      </TouchableOpacity>
+      <Text style={styles.menuPrice}>${item.price}</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={cart}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.flatListContainer}
-      />
+      <Text style={styles.headingmain}>Cart</Text>
+      {cart.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Nothing in Cart</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={cart}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.flatListContainer}
+        />
+      )}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>
+              Do you want to remove this menu from Cart?
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleRemoveFromCart} // Call handleRemoveFromCart
+            >
+              <Text style={styles.modalButtonText}>Remove</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => {
+                setModalVisible(false);
+                setSelectedMenu(null);
+              }}
+            >
+              <Text style={styles.modalCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -67,14 +113,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: Platform.OS === "ios" ? 70 : 50,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#FFF",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
   },
   flatListContainer: {
+    marginTop: 20,
     paddingHorizontal: 20,
+  },
+  headingmain: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#000",
+    marginLeft: 20,
+    marginTop: -6,
   },
   menuContainer: {
     flexDirection: "row",
@@ -82,7 +136,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: "#FFEDD5",
     borderColor: "#FE660F",
     borderWidth: 2,
     shadowColor: "#000",
@@ -125,6 +178,66 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 5,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: 'gray',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalView: {
+    width: 300,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  modalButton: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    backgroundColor: '#FE660F',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalCancelButton: {
+    width: '100%',
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#FE660F',
+    alignItems: 'center',
+  },
+  modalCancelButtonText: {
+    color: '#FE660F',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

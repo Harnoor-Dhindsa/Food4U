@@ -73,6 +73,7 @@ const OrderScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.headingmain}>Orders</Text>
       <FlatList
         data={orders}
         keyExtractor={(item, index) => index.toString()}
@@ -86,7 +87,14 @@ const OrderScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EDF3EB',
+    backgroundColor: '#FFF',
+  },
+  headingmain: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#000",
+    marginLeft: 20,
+    marginTop: 70,
   },
   loadingContainer: {
     flex: 1,
@@ -103,16 +111,12 @@ const styles = StyleSheet.create({
     color: '#4A4A4A',
     marginTop: 16,
   },
-  flatListContainer: {
-    paddingBottom: 16,
-  },
   itemContainer: {
-    backgroundColor: '#FFE5D1',
-    padding: 16,
+    padding: 12,
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 0,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#FE660F',
     shadowColor: '#000',
     shadowOffset: {
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    marginTop: 50,
+    marginTop: 20,
   },
   headerContainer: {
     flexDirection: 'row',

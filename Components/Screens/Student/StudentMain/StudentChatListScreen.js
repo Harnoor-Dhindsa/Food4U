@@ -66,6 +66,7 @@ const StudentChatListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.headingmain}>Chats</Text>
       {chats.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No chats available</Text>
@@ -85,17 +86,24 @@ const StudentChatListScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EDF3EB',
+    backgroundColor: '#FFF',
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
   },
   flatListContainer: {
+    marginTop: 20,
     paddingHorizontal: 10,
+  },
+  headingmain: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#000",
+    marginLeft: 20,
+    marginTop: 10,
   },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#FFEDD5',
     borderRadius: 10,
     borderWidth: 2,
     borderColor: '#FE660F',

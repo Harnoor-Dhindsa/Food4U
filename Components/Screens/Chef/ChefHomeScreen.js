@@ -39,11 +39,11 @@ const ChefHomeScreen = () => {
                     if (route.name === 'Home') {
                         iconName = 'home';
                     } else if (route.name === 'Orders') {
-                        iconName = 'bookmark';
+                        iconName = 'receipt';
                     } else if (route.name === 'Chat') {
-                        iconName = 'chatbox';
+                        iconName = 'chatbox-ellipses';
                     } else if (route.name === 'Profile') {
-                        iconName = 'person';
+                        iconName = 'person-circle';
                     }
 
                     return <Ionicons name={iconName} color={color} size={size} />;
@@ -66,17 +66,23 @@ const styles = StyleSheet.create({
     tabBar: {
         height: "9%",
         backgroundColor: 'white',
-        borderTopWidth: 3,
-        borderTopColor: '#FE660F',
         paddingVertical: 5,
+        shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 2, // This is for Android
     },
     tabBarIOS: {
         height: '10%',
         backgroundColor: 'white',
-        borderTopWidth: 3,
-        borderTopColor: '#FE660F',
         paddingBottom: 20,
         paddingTop: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 6,
+        elevation: 2, // This is for Android
     },
     tabBarLabel: {
         fontSize: 13,

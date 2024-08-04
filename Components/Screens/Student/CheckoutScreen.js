@@ -265,7 +265,7 @@ const Checkout = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#FFF",
   },
   header: {
     flexDirection: "row",

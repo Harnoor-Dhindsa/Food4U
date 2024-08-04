@@ -1,84 +1,109 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, Dimensions, } from 'react-native';
 
-const SelectionScreen = ({navigation}) => {
+const { width: viewportWidth } = Dimensions.get('window');
 
-    const goToRegister = () => {
-        navigation.navigate('ChefSignup');
-    };
+const SelectionScreen = ({ navigation }) => {
+  const entries = [
+    {
+      title: 'Chef',
+      subtitle: "Cooking requires confident guesswork and improvisation—experimentation and substitution, dealing with failure and uncertainty in a creative way.",
+      image: require('../Images/chef.png'),
+      onPress: () => navigation.navigate('ChefSignup'),
+    },
+    {
+      title: 'Student',
+      subtitle: 'Hi! I would like to have some delicious food. Can you help me?',
+      image: require('../Images/student.png'),
+      onPress: () => navigation.navigate('StudentSignup'),
+    },
+  ];
 
-    const goToStudentRegister = () => {
-        navigation.navigate('StudentSignup');
-    };
-
-    return (
-        <ImageBackground 
-            source={require('../Images/screen4.jpg')} // Replace with your image URL
-            style={styles.background}
-        >
-            <View style={styles.overlay}>
-                <View style={styles.box}>
-                    <Text style={styles.subHeading}>Choose Who You Are</Text>
-                    <TouchableOpacity style={styles.buttonChef} onPress={goToRegister}>
-                        <Text style={styles.buttonTextchef}>CHEF</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.buttonStu} onPress={goToStudentRegister}>
-                        <Text style={styles.buttonTextstu}>STUDENT</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </ImageBackground>
-    );
-}
+  return (
+    <View style={styles.container}>
+      <Text style={styles.heading}>Choose Yourself</Text>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContainer}
+      >
+        {entries.map((item, index) => (
+          <TouchableOpacity key={index} style={styles.option} onPress={item.onPress}>
+            <Image source={item.image} style={styles.image} />
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.subtitle}>{item.subtitle}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  background: {
+  container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
-    justifyContent: 'flex-end',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  box: {
-    padding: 20,
-    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+    backgroundColor: "#EDF3EB",
   },
-  subHeading: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 20,
-  },
-  buttonChef: {
+  heading: {
     padding: 20,
-    borderRadius: 50,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontWeight: 'bold',
+    fontSize: 40,
+    marginTop : 50,
+    color: '#000',
+    fontFamily: 'poppins',
+  },
+  scrollViewContainer: {
+    marginBottom: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
+  },
+  option: {
+    alignItems: 'center',
+    backgroundColor: 'white',
+    paddingVertical: 40,
+    paddingHorizontal: 30,
+    borderRadius: 150,
     borderColor: '#FE660F',
     borderWidth: 2,
-    width: "70%",
-    alignItems: 'center',
-    marginVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: viewportWidth * 0.75,
+    height: viewportWidth * 1.5,
+    marginHorizontal: viewportWidth * 0.125,
   },
-  buttonStu: {
-    backgroundColor: '#FE660F',
-    padding: 20,
-    borderRadius: 50,
-    width: "70%",
-    alignItems: 'center',
-    marginVertical: 10,
+  image: {
+    width: 160,
+    height: 180,
+    marginBottom: 20,
+    borderRadius: 0,
+    marginTop: 20,
   },
-  buttonTextchef: {
-    color: '#FE660F',
-    fontSize: 20,
+  title: {
+    fontSize: 30,
     fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#000',
+    marginTop: 50
   },
-  buttonTextstu: {
-    color: 'black',
-    fontSize: 20,
-    fontWeight: 'bold',
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#888',
+    paddingHorizontal: 10,
   },
 });
 

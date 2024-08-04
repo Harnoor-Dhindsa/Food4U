@@ -4,6 +4,7 @@ import { collection, getDocs, where, query, deleteDoc, doc } from 'firebase/fire
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../../../_utils/FirebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 const HomeScreen = () => {
   const [menus, setMenus] = useState([]);
@@ -56,6 +57,17 @@ const HomeScreen = () => {
       onPress={() => navigation.navigate('ViewMenu', { menu: item })}
       onLongPress={() => handleLongPress(item.id)}
     >
+      {item.avatars && item.avatars.length > 0 ? (
+        <Image
+          source={{ uri: item.avatars[0] }}
+          style={styles.image}
+          onError={(e) => console.log(e.nativeEvent.error)}
+        />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <Ionicons name="image-outline" size={24} color="#ccc" />
+        </View>
+      )}
       <View style={styles.menuContent}>
         <View>
           <Text style={styles.heading}>{item.heading}</Text>
@@ -68,7 +80,7 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeContainer}>
-      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <Text style={styles.headingmain}>Menus</Text>
       <FlatList
         data={menus}
@@ -112,7 +124,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: '#EDF3EB',
+    backgroundColor: '#FFF',
   },
   header: {
     padding: 20,
@@ -124,9 +136,18 @@ const styles = StyleSheet.create({
   headingmain: {
     fontSize: 25,
     fontWeight: "bold",
-    color: "#4A4A4A",
+    color: "#000",
     marginLeft: 20,
     marginTop: 20,
+  },
+  placeholderImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
   welcomeMessage: {
     fontSize: 24,
@@ -143,8 +164,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 15,
     borderRadius: 10,
-    backgroundColor: '#FFEDD5',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#FE660F',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

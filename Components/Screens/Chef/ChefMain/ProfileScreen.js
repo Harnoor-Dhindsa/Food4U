@@ -11,21 +11,23 @@ import {
   StatusBar,
   Alert,
   Switch,
+  SafeAreaView,
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, AntDesign, FontAwesome, Entypo, SimpleLineIcons, Fontisto } from "@expo/vector-icons";
 import {
   FIREBASE_AUTH,
   FIREBASE_DB,
   FIREBASE_STORAGE,
 } from "../../../../_utils/FirebaseConfig";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { sendPasswordResetEmail, getAuth, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updateEmail, sendEmailVerification, signOut, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc, deleteDoc, getFirestore, collection, getDocs, query, where  } from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import CustomModalPicker from "../../../others/CustomModalPicker";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
-import AntDesign from '@expo/vector-icons/AntDesign';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -37,7 +39,10 @@ const ProfileScreen = ({ navigation }) => {
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const [profilePic, setProfilePic] = useState(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [view, setView] = useState("profile");
+  const [orderCount, setOrderCount] = useState(0);
+  const [totalEarnings, setTotalEarnings] = useState(0);
 
   const user = FIREBASE_AUTH.currentUser;
 
@@ -53,18 +58,14 @@ const ProfileScreen = ({ navigation }) => {
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const profileData = docSnap.data();
-      setFirstName(profileData.firstName);
-      setLastName(profileData.lastName);
-      setPhoneNumber(profileData.phoneNumber);
-      setGender(profileData.gender);
-      setAge(profileData.age);
-      setLocation(profileData.location);
-      if (profileData.profilePic) {
-        setProfilePic(profileData.profilePic);
-      }
-      if (profileData.notificationsEnabled !== undefined) {
-        setNotificationsEnabled(profileData.notificationsEnabled);
-      }
+      setFirstName(profileData.firstName || "");
+      setLastName(profileData.lastName || "");
+      setPhoneNumber(profileData.phoneNumber || "");
+      setGender(profileData.gender || "");
+      setAge(profileData.age || "");
+      setLocation(profileData.location || "");
+      setProfilePic(profileData.profilePic || null);
+      setNotificationsEnabled(profileData.notificationsEnabled || true);
     } else {
       console.log("No such document!");
     }
@@ -124,7 +125,6 @@ const ProfileScreen = ({ navigation }) => {
       { cancelable: true }
     );
   };
-  
 
   const handleChoosePhoto = async () => {
     let permissionResult =
@@ -172,7 +172,7 @@ const ProfileScreen = ({ navigation }) => {
 
     if (address.length > 0) {
       const addr = address[0];
-      const formattedAddress = `${addr.street}, ${addr.city}, ${addr.region}, ${addr.postalCode}, ${addr.country}`;
+      const formattedAddress = `${addr.street}, ${addr.city}`;
       setLocation(formattedAddress);
     }
   };
@@ -196,6 +196,219 @@ const ProfileScreen = ({ navigation }) => {
     } else {
       setPhoneNumber(text);
     }
+  };
+
+  const toggleNotifications = async (value) => {
+    setNotificationsEnabled(value);
+  
+    if (value) {
+      // Request notification permissions
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission for notifications was denied");
+        setNotificationsEnabled(false);
+        return; // Exit early if permissions are not granted
+      }
+  
+      // Get the push token
+      const token = await Notifications.getExpoPushTokenAsync();
+      
+      // Update the user's profile with the token
+      if (user) {
+        const profileData = {
+          notificationsEnabled: value,
+          expoPushToken: token, // Store the actual push token
+        };
+  
+        const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+        await setDoc(userRef, profileData, { merge: true });
+      }
+    } else {
+      // Disable notifications and clear the push token
+      if (user) {
+        const profileData = {
+          notificationsEnabled: value,
+          expoPushToken: null, // Set token to null when notifications are disabled
+        };
+  
+        const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+        await setDoc(userRef, profileData, { merge: true });
+      }
+    }
+  };
+  
+
+  const handleViewChange = (view) => {
+    setView(view);
+  };
+
+  const handleBackPress = () => {
+    setView("profile"); // Go back to profile view
+  };
+
+  const handlePasswordReset = () => {
+    Alert.alert(
+      "Reset Password",
+      "Are you sure you want to reset your password?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Password reset cancelled"),
+          style: "cancel"
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              await sendPasswordResetEmail(FIREBASE_AUTH, email);
+              alert("Password reset email sent!");
+            } catch (error) {
+              console.log(error);
+              alert(
+                "Failed to send password reset email. Please check your email address."
+              );
+            }
+          }
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const handleDeleteUser = async () => {
+    const auth = getAuth();
+    const firestore = getFirestore();
+    const user = auth.currentUser;
+  
+    if (!user) {
+      alert("No user is currently signed in.");
+      return;
+    }
+  
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Account deletion cancelled"),
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => {
+            // Prompt user to enter their password for reauthentication
+            Alert.prompt(
+              "Reauthenticate",
+              "Please enter your password to confirm:",
+              [
+                {
+                  text: "Cancel",
+                  onPress: () => console.log("Reauthentication cancelled"),
+                  style: "cancel",
+                },
+                {
+                  text: "OK",
+                  onPress: async (inputPassword) => {
+                    try {
+                      const credential = EmailAuthProvider.credential(
+                        user.email,
+                        inputPassword
+                      );
+                      await reauthenticateWithCredential(user, credential);
+  
+                      // Delete user data from Firestore
+                      const userDoc = doc(firestore, "ChefsProfiles", user.uid);
+                      await deleteDoc(userDoc);
+  
+                      // Delete the user from Firebase Authentication
+                      await deleteUser(user);
+                      alert("Your account and data have been deleted.");
+                      navigation.replace("Screen"); // Navigate to the login screen
+                    } catch (error) {
+                      console.error("Error deleting user: ", error);
+                      alert("Failed to delete the account. Please try again.");
+                    }
+                  },
+                },
+              ],
+              "secure-text"
+            );
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const updateUserEmail = async (newEmail, currentPassword) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+  
+    if (!user) {
+      alert("No user is currently signed in.");
+      return;
+    }
+  
+    // Reauthenticate User
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    try {
+      await reauthenticateWithCredential(user, credential);
+  
+      // Update Email in Firebase Authentication
+      await updateEmail(user, newEmail);
+      alert("Email updated successfully. Please verify your new email address.");
+  
+      // Update Email in Firestore
+      const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
+      await setDoc(userRef, { email: newEmail }, { merge: true });
+      
+    } catch (error) {
+      console.error("Error updating email: ", error);
+      alert("Failed to update email. Please try again.");
+    }
+  };
+  
+  const handleChangeEmail = () => {
+    Alert.prompt(
+      "Reauthenticate",
+      "Please enter your current password:",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Reauthentication cancelled"),
+          style: "cancel",
+        },
+        {
+          text: "OK",
+          onPress: (currentPassword) => {
+            Alert.prompt(
+              "Change Email",
+              "Please enter your new email address:",
+              [
+                {
+                  text: "Cancel",
+                  onPress: () => console.log("Email change cancelled"),
+                  style: "cancel",
+                },
+                {
+                  text: "OK",
+                  onPress: async (newEmail) => {
+                    if (newEmail) {
+                      await updateUserEmail(newEmail, currentPassword);
+                    } else {
+                      alert("Please enter a valid email address.");
+                    }
+                  },
+                },
+              ],
+              "plain-text"
+            );
+          },
+        },
+      ],
+      "secure-text"
+    );
   };
 
   const createStripeAccount = async () => {
@@ -245,322 +458,457 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  const toggleNotifications = async (value) => {
-    setNotificationsEnabled(value);
-    if (value) {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission for notifications was denied");
-        setNotificationsEnabled(false);
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+
+        if (!currentUser) {
+          console.error('No user is logged in');
+          return;
+        }
+
+        const currentUserId = currentUser.uid;
+
+        // Create a query against the collection with a where clause
+        const ordersCollection = collection(FIREBASE_DB, 'orders');
+        const ordersQuery = query(ordersCollection, where('chefId', '==', currentUserId));
+        const querySnapshot = await getDocs(ordersQuery);
+
+        // Count the number of orders
+        setOrderCount(querySnapshot.size);
+
+        // Calculate the total earnings
+        let total = 0;
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          total += data.totalPrice || 0; // Ensure totalPrice exists and is a number
+        });
+        setTotalEarnings(total);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
       }
-    }
+    };
 
-    if (user) {
-      const profileData = {
-        notificationsEnabled: value,
-      };
-
-      const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
-      await setDoc(userRef, profileData, { merge: true });
-    }
-  };
-
+    fetchOrders();
+  }, []);
+  
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#EDF3EB" />
-      <View style={styles.profileHeader}>
-        <View style={styles.profilePhotoContainer}>
-          <Image
-            key={profilePic}
-            source={{ uri: profilePic }}
-            style={styles.profilePhoto}
-          />
-          {editMode && (
-            <TouchableOpacity
-              style={styles.editPhotoButton}
-              onPress={handleChoosePhoto}
-            >
-              <Ionicons name="camera" size={20} color="#fff" />
-            </TouchableOpacity>
-          )}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content"></StatusBar>
+      <View style={styles.header}>
+      {view === "account" ? (
+          <View style={styles.backbutton}>
+          <TouchableOpacity onPress={handleBackPress}>
+            <Ionicons name="arrow-back" size={30} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.name}> Account Info</Text>
         </View>
-        <View style={styles.nameContainer}>
-          {editMode ? (
-            <>
-              <TextInput
-                style={[styles.name, styles.editableInput]}
-                value={firstName}
-                editable={editMode}
-                onChangeText={setFirstName}
-              />
-              <TextInput
-                style={[styles.name, styles.editableInput]}
-                value={lastName}
-                editable={editMode}
-                onChangeText={setLastName}
-              />
-            </>
-          ) : (
+        ) : view === "settings" ? (
+          <View style={styles.backbutton}>
+            <TouchableOpacity onPress={handleBackPress}>
+              <Ionicons name="arrow-back" size={30} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.name}> Settings</Text>
+          </View>
+        ) : (
+          <View style={styles.profileHeader}>
+            <Image
+              source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
+              style={styles.mprofilePhoto}
+            />
             <Text style={styles.name}>
               {firstName} {lastName}
             </Text>
-          )}
-        </View>
-        {!editMode && (
-          <TouchableOpacity
-            style={styles.topRightButton}
-            onPress={handleEditProfile}
-          >
-            <AntDesign
-              name={"edit"}
-              size={26}
-              color="#FE660F"
-            />
-          </TouchableOpacity>
+          </View>
         )}
       </View>
-      <View style={styles.infoContainer}>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="email" size={30} color="#e8c123" />
-          <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
-            value={email}
-            editable={false}
-            placeholder="Email"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="phone" size={30} color="#0a50d1" />
-          <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
-            value={phoneNumber}
-            editable={editMode}
-            onChangeText={handlePhoneNumberChange}
-            placeholder="Phone Number"
-            placeholderTextColor="#ccc"
-            keyboardType="phone-pad"
-          />
-        </View>
-        <View style={styles.inputContainer}>
-  <MaterialIcons name="wc" size={30} color="#FE660F" />
-  {editMode ? (
-    <CustomModalPicker
-      options={["Male", "Female"]}
-      selectedValue={gender}
-      onValueChange={setGender}
-      enabled={editMode}
-    />
-  ) : (
-    <TextInput
-      style={[styles.input, !editMode && styles.nonEditableText]}
-      value={gender}
-      editable={editMode}
-      onChangeText={setGender}
-      placeholder="Gender"
-      placeholderTextColor="#ccc"
-    />
-  )}
-</View>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="cake" size={30} color="#d10a67" />
-          <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
-            value={age}
-            editable={editMode}
-            onChangeText={setAge}
-            placeholder="Age"
-            placeholderTextColor="#ccc"
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="location-on" size={30} color="#d10a2b" />
-          <TextInput
-            style={[styles.input, !editMode && styles.nonEditableText]}
-            value={location}
-            editable={editMode}
-            onChangeText={setLocation}
-            placeholder="Location"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-        <View style={styles.NotificationsContainer}>
-        <Ionicons name="notifications" size={30} color="#f7dc0a" />
-          <Text style={styles.inputSetting}>Notifications:</Text>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={toggleNotifications}
-          />
-        </View>
-        <View style={styles.PolicyContainer}>
-          <MaterialIcons name="policy" size={30} color="#0f0fdb" />
-          <Text style={styles.inputSetting}>Policy</Text>
-          <AntDesign name="arrowright" size={30} color="#000" />
-        </View>
-      </View>
-      {editMode ? (
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={handleSaveProfile}>
-            <Text style={styles.buttonText}>Confirm Changes</Text>
+
+      {view === "profile" && (
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>{orderCount}</Text>
+            <Text style={styles.buttonText}>Menu Sold</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>$ {totalEarnings.toFixed(2)}</Text>
+            <Text style={styles.buttonText}>Total Earn</Text>
           </TouchableOpacity>
         </View>
-      ) : (
-        <>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={createStripeAccount}>
-              <Text style={styles.buttonText}>Create Stripe Account</Text>
-            </TouchableOpacity>
+        <TouchableOpacity style={styles.option} onPress={() => handleViewChange("account")}>
+          <View style={styles.optionContent}>
+            <Ionicons name="information-circle-outline" size={24} color="black" />
+            <Text style={styles.optionText}>Account</Text>
           </View>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.Logoutbutton} onPress={handleLogOut}>
-              <Text style={styles.LogoutbuttonText}>Log Out</Text>
-            </TouchableOpacity>
+          <Ionicons name="chevron-forward-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.option}>
+          <View style={styles.optionContent}>
+            <Ionicons name="person-add-outline" size={24} color="black" />
+            <Text style={styles.optionText}>Invite Friends</Text>
           </View>
-        </>
+          <Ionicons name="chevron-forward-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.option}>
+          <View style={styles.optionContent}>
+            <Ionicons name="document-text-outline" size={24} color="black" />
+            <Text style={styles.optionText}>Policies</Text>
+          </View>
+          <Ionicons name="chevron-forward-outline" size={24} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.option} onPress={() => handleViewChange("settings")}>
+          <View style={styles.optionContent}>
+            <Ionicons name="settings-outline" size={24} color="black" />
+            <Text style={styles.optionText}>Settings</Text>
+          </View>
+          <Ionicons name="chevron-forward-outline" size={24} color="black" />
+        </TouchableOpacity>
+      </ScrollView>
+    )}
+    {view === "account" && (
+        <ScrollView contentContainerStyle={styles.form}>
+        {editMode ? (
+            <View style={styles.editForm}>
+              <TouchableOpacity style={styles.aprofilePhoto}>
+                <Image
+                  source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
+                  style={styles.profilePhoto}
+                />
+                <TouchableOpacity onPress={handleChoosePhoto} style={styles.choosephoto}>
+                <Entypo name="camera" size={20} color="black" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>First Name:</Text>
+              </View>
+              <TextInput
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="First Name"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>Last Name:</Text>
+              </View>
+              <TextInput
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Last Name"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>Email:</Text>
+              </View>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email"
+                editable={false}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>Phone Number:</Text>
+              </View>
+              <TextInput
+                value={phoneNumber}
+                onChangeText={handlePhoneNumberChange}
+                placeholder="Phone Number"
+                keyboardType="phone-pad"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>Gender:</Text>
+              </View>
+              <CustomModalPicker
+               options={["Male", "Female"]}
+               selectedValue={gender}
+               onValueChange={setGender}
+               enabled={editMode}
+              />
+            </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>Age:</Text>
+              </View>
+              <TextInput
+                value={age}
+                onChangeText={setAge}
+                placeholder="Age"
+                keyboardType="numeric"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Text style={styles.aoptionText}>Location:</Text>
+              </View>
+              <TextInput
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Location"
+              />
+            </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View>
+              <TouchableOpacity style={styles.aprofilePhoto}>
+                <Image
+                  source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
+                  style={styles.profilePhoto}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <Ionicons name="person" size={24} color="black" />
+                <Text style={styles.aoptionText}>Name:</Text>
+              </View>
+              <Text>{firstName} {lastName}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+              <Entypo name="email" size={24} color="black" />
+                <Text style={styles.aoptionText}>Email:</Text>
+              </View>
+              <Text>{email}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+              <FontAwesome name="phone" size={24} color="black" />
+                <Text style={styles.aoptionText}>Phone Number:</Text>
+              </View>
+              <Text>{phoneNumber}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+              <Ionicons name="male-female-sharp" size={24} color="black" />
+                <Text style={styles.aoptionText}>Gender:</Text>
+              </View>
+              <Text>{gender}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+              <FontAwesome name="birthday-cake" size={24} color="black" />
+                <Text style={styles.aoptionText}>Age:</Text>
+              </View>
+              <Text>{age}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+              <Ionicons name="location" size={24} color="black" />
+                <Text style={styles.aoptionText}>Location:</Text>
+              </View>
+              <Text>{location}</Text>
+            </TouchableOpacity>
+              <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+                <Text style={styles.editButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
       )}
-    </ScrollView>
+    {view === "settings" && (
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.option}>
+              <View style={styles.optionContent}>
+                <Ionicons name="notifications-outline" size={24} color="black" />
+                <Text style={styles.optionText}>Notifications</Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={toggleNotifications}
+              />
+            </View>
+            <TouchableOpacity style={styles.option} onPress={handleChangeEmail}>
+              <View style={styles.optionContent}>
+              <Fontisto name="email" size={24} color="black" />
+                <Text style={styles.optionText}>Update Email</Text>
+              </View>
+              <Ionicons name="chevron-forward-outline" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={handlePasswordReset}>
+              <View style={styles.optionContent}>
+                <Ionicons name="key-outline" size={24} color="black" />
+                <Text style={styles.optionText}>Reset Password</Text>
+              </View>
+              <Ionicons name="chevron-forward-outline" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={createStripeAccount}>
+              <View style={styles.optionContent}>
+              <MaterialIcons name="payment" size={24} color="black" />
+                <Text style={styles.optionText}>Stripe Account</Text>
+              </View>
+              <Ionicons name="chevron-forward-outline" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={handleLogOut}>
+              <View style={styles.optionContent}>
+                <Ionicons name="log-out-outline" size={24} color="black" />
+                <Text style={styles.optionText}>Log Out</Text>
+              </View>
+              <Ionicons name="chevron-forward-outline" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={handleDeleteUser}>
+              <View style={styles.optionContent}>
+                <Ionicons name="trash-outline" size={24} color="red" />
+                <Text style={styles.doptionText}>Delete Account</Text>
+              </View>
+              <Ionicons name="chevron-forward-outline" size={24} color="black" />
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#EDF3EB",
+    flex: 1,
+    backgroundColor: "#fff",
   },
-  profileHeader: {
-    marginTop: 45,
+  header: {
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  backbutton: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-    position: "relative",
+    justifyContent: "center",
   },
-  profilePhotoContainer: {
-    position: "relative",
-    marginRight: 15,
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   profilePhoto: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 10,
-    borderWidth: 3,
+    width: 140,
+    height: 140,
+    borderRadius: 100,
+    marginRight: 10,
+    borderWidth: 2,
     borderColor: "#FE660F",
   },
-  editPhotoButton: {
-    position: "absolute",
-    bottom: 10,
-    right: 5,
-    backgroundColor: "#FE660F",
-    borderRadius: 50,
-    padding: 5,
+  mprofilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 100,
+    marginRight: 10,
+    borderWidth: 2,
+    borderColor: "#FE660F",
   },
-  topRightButton: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    padding: 10,
-    borderRadius: 50,
-  },
-  nameContainer: {
-    flexDirection: 'row',  // Aligns children in a row
-    alignItems: 'center',  // Vertically centers children
+  aprofilePhoto: {
+    alignItems: "center",
     marginBottom: 20,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FE660F',  // Ensures the inputs take up available space
+    fontSize: 30,
+    fontWeight: "bold",
   },
-  editableInput: { // Ensures the inputs take up available space
-    borderBottomWidth: 1,
-    borderBottomColor: '#FE660F',
-    borderRadius: 5,
-    padding: 3,
-    marginVertical: 5,
-    backgroundColor: '#EDF3EB',
+  scrollContainer: {
+    padding: 20,
   },
-  infoContainer: {
+  buttonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 20,
   },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    padding: 5,
-    paddingVertical: 5,
-    height: 43,
-    borderRadius: 5,
-    backgroundColor: "#EDF3EB",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4, // This is for Android
-  },
-  NotificationsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 45,
-    paddingVertical: 5,
-  },
-  PolicyContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 15,
-    paddingVertical: 5,
-  },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: "#000",
-  },
-  inputSetting: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 18,
-    color: "#000",
-    fontWeight: "bold",
-  },
-  nonEditableText: {
-    color: "#000",
-    fontWeight: "bold",
-  },
-  buttonContainer: {
-    alignItems: "center",
-    marginTop: 10,
-  },
   button: {
-    backgroundColor: "#FE660F",
-    padding: 15,
-    borderRadius: 5,
-    marginBottom: 2,
-    width: "100%",
-    alignItems: "center",
-  },
-  Logoutbutton: {
-    padding: 15,
-    borderRadius: 5,
-    borderWidth: 3,
+    flex: 1,
+    backgroundColor: "#fff",
     borderColor: "#FE660F",
-    marginBottom: 10,
-    width: "100%",
+    borderWidth: 2,
+    padding: 10,
     alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    marginHorizontal: 5,
+    height: 100,
   },
   buttonText: {
+    marginTop: 5,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  form: {
+    padding: 20,
+  },
+  input: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    padding: 10,
+    marginBottom: 20,
+  },
+  saveButton: {
+    backgroundColor: "#FE660F",
+    padding: 20,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  saveButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
-  LogoutbuttonText: {
-    color: "#FE660F",
+  option: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  optionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  optionText: {
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  doptionText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: "red",
+  },
+  aoptionText: {
+    marginLeft: 10,
     fontSize: 16,
     fontWeight: "bold",
+  },
+  text: {
+    fontSize: 16,
+    marginVertical: 5,
+  },
+  editButton: {
+    backgroundColor: "#FE660F",
+    padding: 20,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  editButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  choosephoto: {
+    position: "absolute",
+    bottom: 0,
+    right: 140,
+    backgroundColor: "#FE660F",
+    padding: 5,
+    borderRadius: 50,
   },
 });
 

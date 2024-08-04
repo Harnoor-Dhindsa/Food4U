@@ -47,12 +47,19 @@ const FavScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.headingmain}>Favorites</Text>
+      {userFavorites.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No Favorites</Text>
+        </View>
+      ) : (
       <FlatList
         data={userFavorites}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.flatListContainer}
       />
+      )}
     </View>
   );
 };
@@ -61,14 +68,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: Platform.OS === 'ios' ? 70 : 50,
-    backgroundColor: '#EDF3EB',
+    backgroundColor: '#FFF',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
   flatListContainer: {
+    marginTop: 20,
     paddingHorizontal: 20,
+  },
+  headingmain: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#000",
+    marginLeft: 20,
+    marginTop: -5,
   },
   menuContainer: {
     flexDirection: 'row',
@@ -76,7 +91,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: '#FFEDD5',
     borderColor: '#FE660F',
     borderWidth: 2,
     shadowColor: '#000',
@@ -107,6 +121,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FE660F',
     marginLeft: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: 'gray',
   },
 });
 
