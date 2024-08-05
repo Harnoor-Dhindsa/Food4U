@@ -130,7 +130,7 @@ const HomeScreen = ({ navigation }) => {
           placeholder="Search by menu heading or dish..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholderTextColor="#999"
+          placeholderTextColor="#000"
         />
       </View>
       <TouchableOpacity style={styles.filterButton} onPress={toggleModal}>
@@ -206,16 +206,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 20,
     marginVertical: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#f7f7f7",
     borderRadius: 50,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
   },
   searchIcon: {
     paddingLeft: 10,
+    color: "black",
   },
   headingmain: {
     fontSize: 25,
@@ -245,6 +241,7 @@ const styles = StyleSheet.create({
   },
   flatListContainer: {
     paddingHorizontal: 20,
+    marginTop: 10,
   },
   menuContainer: {
     flexDirection: "row",
@@ -253,12 +250,10 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     backgroundColor: "#fff",
-    borderColor: "#FE660F",
-    borderWidth: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     elevation: 2,
   },
   image: {
@@ -271,7 +266,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#000",
+    backgroundColor: "#f7f7f7",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,

@@ -9,7 +9,7 @@
       "WRITE_EXTERNAL_STORAGE"
     ],
     "notification": {
-    "icon": "./assets/icon.png",
+    "icon": "./assets/adaptive-icon.png",
     "color": "#311b92",
     "androidMode": "default",
     "androidCollapsedTitle": "Updates from Colab.notes",
@@ -46,6 +46,15 @@
         "backgroundColor": "#ffffff"
       }
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+  ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
