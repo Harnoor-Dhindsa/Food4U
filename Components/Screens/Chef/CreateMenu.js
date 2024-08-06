@@ -112,10 +112,10 @@ const handleSaveMenu = async () => {
 
   try {
     if (menu) {
-      const menuDocRef = doc(FIREBASE_DB, "Menus", menu.id);
+      const menuDocRef = doc(FIREBASE_DB, "PendingMenus", menu.id);
       await updateDoc(menuDocRef, menuData);
     } else {
-      await addDoc(collection(FIREBASE_DB, "Menus"), menuData);
+      await addDoc(collection(FIREBASE_DB, "PendingMenus"), menuData);
     }
     navigation.goBack();
   } catch (error) {

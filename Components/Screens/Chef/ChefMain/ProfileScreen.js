@@ -43,6 +43,9 @@ const ProfileScreen = ({ navigation }) => {
   const [view, setView] = useState("profile");
   const [orderCount, setOrderCount] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const [verificationDoc, setVerificationDoc] = useState(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+
 
   const user = FIREBASE_AUTH.currentUser;
 
@@ -52,6 +55,57 @@ const ProfileScreen = ({ navigation }) => {
       setEmail(user.email); // Set email to the user's email from Firebase Authentication
     }
   }, [user]);
+
+  const handleUploadDocument = async () => {
+    // Request permission to access media library
+    let permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      alert("Permission to access media library is required!");
+      return;
+    }
+
+    // Launch image picker to select a document
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // You can modify this to select other types of documents
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const { uri } = result.assets[0];
+      setVerificationDoc(uri);
+    }
+  };
+
+  const handleSubmitDocument = async () => {
+    if (!verificationDoc) {
+      alert("No document selected!");
+      return;
+    }
+
+    setUploadingDoc(true);
+    try {
+      const response = await fetch(verificationDoc);
+      const blob = await response.blob();
+      const storageRef = ref(FIREBASE_STORAGE, `verificationDocs/${user.uid}`);
+
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Save the URL in Firestore
+      const docRef = doc(FIREBASE_DB, "PendingVerification", user.uid);
+      await setDoc(docRef, { documentURL: downloadURL }, { merge: true });
+
+      alert("Document uploaded successfully!");
+      setVerificationDoc(null);
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      alert("Failed to upload document. Please try again.");
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
 
   const loadUserProfile = async () => {
     const docRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
@@ -498,13 +552,13 @@ const ProfileScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content"></StatusBar>
       <View style={styles.header}>
-      {view === "account" ? (
+        {view === "account" ? (
           <View style={styles.backbutton}>
-          <TouchableOpacity onPress={handleBackPress}>
-            <Ionicons name="arrow-back" size={30} color="black" />
-          </TouchableOpacity>
-          <Text style={styles.name}> Account Info</Text>
-        </View>
+            <TouchableOpacity onPress={handleBackPress}>
+              <Ionicons name="arrow-back" size={30} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.name}> Account Info</Text>
+          </View>
         ) : view === "settings" ? (
           <View style={styles.backbutton}>
             <TouchableOpacity onPress={handleBackPress}>
@@ -515,7 +569,11 @@ const ProfileScreen = ({ navigation }) => {
         ) : (
           <View style={styles.profileHeader}>
             <Image
-              source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
+              source={
+                profilePic
+                  ? { uri: profilePic }
+                  : require("../../../Images/DefaultProfile.png")
+              }
               style={styles.mprofilePhoto}
             />
             <Text style={styles.name}>
@@ -526,135 +584,157 @@ const ProfileScreen = ({ navigation }) => {
       </View>
 
       {view === "profile" && (
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>{orderCount}</Text>
-            <Text style={styles.buttonText}>Menu Sold</Text>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.buttonsContainer}>
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>{orderCount}</Text>
+              <Text style={styles.buttonText}>Menu Sold</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>
+                $ {totalEarnings.toFixed(2)}
+              </Text>
+              <Text style={styles.buttonText}>Total Earn</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => handleViewChange("account")}
+          >
+            <View style={styles.optionContent}>
+              <Ionicons
+                name="information-circle-outline"
+                size={24}
+                color="black"
+              />
+              <Text style={styles.optionText}>Account</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>$ {totalEarnings.toFixed(2)}</Text>
-            <Text style={styles.buttonText}>Total Earn</Text>
+          <TouchableOpacity style={styles.option}>
+            <View style={styles.optionContent}>
+              <Ionicons name="person-add-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Invite Friends</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
           </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.option} onPress={() => handleViewChange("account")}>
-          <View style={styles.optionContent}>
-            <Ionicons name="information-circle-outline" size={24} color="black" />
-            <Text style={styles.optionText}>Account</Text>
-          </View>
-          <Ionicons name="chevron-forward-outline" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <View style={styles.optionContent}>
-            <Ionicons name="person-add-outline" size={24} color="black" />
-            <Text style={styles.optionText}>Invite Friends</Text>
-          </View>
-          <Ionicons name="chevron-forward-outline" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option}>
-          <View style={styles.optionContent}>
-            <Ionicons name="document-text-outline" size={24} color="black" />
-            <Text style={styles.optionText}>Policies</Text>
-          </View>
-          <Ionicons name="chevron-forward-outline" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.option} onPress={() => handleViewChange("settings")}>
-          <View style={styles.optionContent}>
-            <Ionicons name="settings-outline" size={24} color="black" />
-            <Text style={styles.optionText}>Settings</Text>
-          </View>
-          <Ionicons name="chevron-forward-outline" size={24} color="black" />
-        </TouchableOpacity>
-      </ScrollView>
-    )}
-    {view === "account" && (
+          <TouchableOpacity style={styles.option}>
+            <View style={styles.optionContent}>
+              <Ionicons name="document-text-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Policies</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => handleViewChange("settings")}
+          >
+            <View style={styles.optionContent}>
+              <Ionicons name="settings-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Settings</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+      {view === "account" && (
         <ScrollView contentContainerStyle={styles.form}>
-        {editMode ? (
+          {editMode ? (
             <View style={styles.editForm}>
               <TouchableOpacity style={styles.aprofilePhoto}>
                 <Image
-                  source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
+                  source={
+                    profilePic
+                      ? { uri: profilePic }
+                      : require("../../../Images/DefaultProfile.png")
+                  }
                   style={styles.profilePhoto}
                 />
-                <TouchableOpacity onPress={handleChoosePhoto} style={styles.choosephoto}>
-                <Entypo name="camera" size={20} color="black" />
+                <TouchableOpacity
+                  onPress={handleChoosePhoto}
+                  style={styles.choosephoto}
+                >
+                  <Entypo name="camera" size={20} color="black" />
                 </TouchableOpacity>
               </TouchableOpacity>
               <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>First Name:</Text>
-              </View>
-              <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="First Name"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>Last Name:</Text>
-              </View>
-              <TextInput
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Last Name"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>Email:</Text>
-              </View>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email"
-                editable={false}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>Phone Number:</Text>
-              </View>
-              <TextInput
-                value={phoneNumber}
-                onChangeText={handlePhoneNumberChange}
-                placeholder="Phone Number"
-                keyboardType="phone-pad"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>Gender:</Text>
-              </View>
-              <CustomModalPicker
-               options={["Male", "Female"]}
-               selectedValue={gender}
-               onValueChange={setGender}
-               enabled={editMode}
-              />
-            </TouchableOpacity>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>First Name:</Text>
+                </View>
+                <TextInput
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="First Name"
+                />
+              </TouchableOpacity>
               <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>Age:</Text>
-              </View>
-              <TextInput
-                value={age}
-                onChangeText={setAge}
-                placeholder="Age"
-                keyboardType="numeric"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Text style={styles.aoptionText}>Location:</Text>
-              </View>
-              <TextInput
-                value={location}
-                onChangeText={setLocation}
-                placeholder="Location"
-              />
-            </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>Last Name:</Text>
+                </View>
+                <TextInput
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Last Name"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>Email:</Text>
+                </View>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email"
+                  editable={false}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>Phone Number:</Text>
+                </View>
+                <TextInput
+                  value={phoneNumber}
+                  onChangeText={handlePhoneNumberChange}
+                  placeholder="Phone Number"
+                  keyboardType="phone-pad"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>Gender:</Text>
+                </View>
+                <CustomModalPicker
+                  options={["Male", "Female"]}
+                  selectedValue={gender}
+                  onValueChange={setGender}
+                  enabled={editMode}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>Age:</Text>
+                </View>
+                <TextInput
+                  value={age}
+                  onChangeText={setAge}
+                  placeholder="Age"
+                  keyboardType="numeric"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Text style={styles.aoptionText}>Location:</Text>
+                </View>
+                <TextInput
+                  value={location}
+                  onChangeText={setLocation}
+                  placeholder="Location"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveProfile}
+              >
                 <Text style={styles.saveButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
@@ -662,108 +742,143 @@ const ProfileScreen = ({ navigation }) => {
             <View>
               <TouchableOpacity style={styles.aprofilePhoto}>
                 <Image
-                  source={profilePic ? { uri: profilePic } : require("../../../Images/DefaultProfile.png")}
+                  source={
+                    profilePic
+                      ? { uri: profilePic }
+                      : require("../../../Images/DefaultProfile.png")
+                  }
                   style={styles.profilePhoto}
                 />
               </TouchableOpacity>
               <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-                <Ionicons name="person" size={24} color="black" />
-                <Text style={styles.aoptionText}>Name:</Text>
-              </View>
-              <Text>{firstName} {lastName}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-              <Entypo name="email" size={24} color="black" />
-                <Text style={styles.aoptionText}>Email:</Text>
-              </View>
-              <Text>{email}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-              <FontAwesome name="phone" size={24} color="black" />
-                <Text style={styles.aoptionText}>Phone Number:</Text>
-              </View>
-              <Text>{phoneNumber}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-              <Ionicons name="male-female-sharp" size={24} color="black" />
-                <Text style={styles.aoptionText}>Gender:</Text>
-              </View>
-              <Text>{gender}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-              <FontAwesome name="birthday-cake" size={24} color="black" />
-                <Text style={styles.aoptionText}>Age:</Text>
-              </View>
-              <Text>{age}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option}>
-              <View style={styles.optionContent}>
-              <Ionicons name="location" size={24} color="black" />
-                <Text style={styles.aoptionText}>Location:</Text>
-              </View>
-              <Text>{location}</Text>
-            </TouchableOpacity>
-              <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+                <View style={styles.optionContent}>
+                  <Ionicons name="person" size={24} color="black" />
+                  <Text style={styles.aoptionText}>Name:</Text>
+                </View>
+                <Text>
+                  {firstName} {lastName}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Entypo name="email" size={24} color="black" />
+                  <Text style={styles.aoptionText}>Email:</Text>
+                </View>
+                <Text>{email}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <FontAwesome name="phone" size={24} color="black" />
+                  <Text style={styles.aoptionText}>Phone Number:</Text>
+                </View>
+                <Text>{phoneNumber}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Ionicons name="male-female-sharp" size={24} color="black" />
+                  <Text style={styles.aoptionText}>Gender:</Text>
+                </View>
+                <Text>{gender}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <FontAwesome name="birthday-cake" size={24} color="black" />
+                  <Text style={styles.aoptionText}>Age:</Text>
+                </View>
+                <Text>{age}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.option}>
+                <View style={styles.optionContent}>
+                  <Ionicons name="location" size={24} color="black" />
+                  <Text style={styles.aoptionText}>Location:</Text>
+                </View>
+                <Text>{location}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={handleEditProfile}
+              >
                 <Text style={styles.editButtonText}>Edit Profile</Text>
               </TouchableOpacity>
             </View>
           )}
         </ScrollView>
       )}
-    {view === "settings" && (
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.option}>
-              <View style={styles.optionContent}>
-                <Ionicons name="notifications-outline" size={24} color="black" />
-                <Text style={styles.optionText}>Notifications</Text>
-              </View>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={toggleNotifications}
-              />
+      {view === "settings" && (
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.option}>
+            <View style={styles.optionContent}>
+              <Ionicons name="notifications-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Notifications</Text>
             </View>
-            <TouchableOpacity style={styles.option} onPress={handleChangeEmail}>
-              <View style={styles.optionContent}>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={toggleNotifications}
+            />
+          </View>
+          <TouchableOpacity style={styles.option} onPress={handleChangeEmail}>
+            <View style={styles.optionContent}>
               <Fontisto name="email" size={24} color="black" />
-                <Text style={styles.optionText}>Update Email</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handlePasswordReset}>
-              <View style={styles.optionContent}>
-                <Ionicons name="key-outline" size={24} color="black" />
-                <Text style={styles.optionText}>Reset Password</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={createStripeAccount}>
-              <View style={styles.optionContent}>
+              <Text style={styles.optionText}>Update Email</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={handlePasswordReset}>
+            <View style={styles.optionContent}>
+              <Ionicons name="key-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Reset Password</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={createStripeAccount}>
+            <View style={styles.optionContent}>
               <MaterialIcons name="payment" size={24} color="black" />
-                <Text style={styles.optionText}>Stripe Account</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handleLogOut}>
-              <View style={styles.optionContent}>
-                <Ionicons name="log-out-outline" size={24} color="black" />
-                <Text style={styles.optionText}>Log Out</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handleDeleteUser}>
-              <View style={styles.optionContent}>
-                <Ionicons name="trash-outline" size={24} color="red" />
-                <Text style={styles.doptionText}>Delete Account</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="black" />
-            </TouchableOpacity>
-          </ScrollView>
-        )}
+              <Text style={styles.optionText}>Stripe Account</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={handleUploadDocument}
+          >
+            <View style={styles.optionContent}>
+              <Ionicons name="cloud-upload-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Verify Yourself</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+          {verificationDoc && (
+            <View style={styles.documentUploadContainer}>
+              <Image
+                source={{ uri: verificationDoc }}
+                style={styles.uploadedDocument}
+              />
+              <TouchableOpacity
+                onPress={handleSubmitDocument}
+                style={styles.uploadButton}
+              >
+                <Text style={styles.uploadButtonText}>
+                  {uploadingDoc ? "Uploading..." : "Upload Document"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <TouchableOpacity style={styles.option} onPress={handleLogOut}>
+            <View style={styles.optionContent}>
+              <Ionicons name="log-out-outline" size={24} color="black" />
+              <Text style={styles.optionText}>Log Out</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={handleDeleteUser}>
+            <View style={styles.optionContent}>
+              <Ionicons name="trash-outline" size={24} color="red" />
+              <Text style={styles.doptionText}>Delete Account</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={24} color="black" />
+          </TouchableOpacity>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -772,6 +887,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  documentUploadContainer: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+  uploadedDocument: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+  },
+  uploadButton: {
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 5,
+  },
+  uploadButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
   },
   header: {
     padding: 20,
