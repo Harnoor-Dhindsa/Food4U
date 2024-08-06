@@ -306,6 +306,7 @@ const handleSaveMenu = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
+    <Text>Wait for the admin to approve the menu !!!!!</Text>
       <SectionList
         sections={sections}
         keyExtractor={(item, index) => index.toString()}

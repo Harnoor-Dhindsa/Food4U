@@ -13,7 +13,7 @@ import {
   Switch,
   SafeAreaView,
 } from "react-native";
-import { Ionicons, MaterialIcons, AntDesign, FontAwesome, Entypo, SimpleLineIcons, Fontisto } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, AntDesign, FontAwesome, Entypo, SimpleLineIcons, Fontisto, Octicons } from "@expo/vector-icons";
 import {
   FIREBASE_AUTH,
   FIREBASE_DB,
@@ -842,7 +842,7 @@ const ProfileScreen = ({ navigation }) => {
             onPress={handleUploadDocument}
           >
             <View style={styles.optionContent}>
-              <Ionicons name="cloud-upload-outline" size={24} color="black" />
+            <Octicons name="unverified" size={24} color="black" />
               <Text style={styles.optionText}>Verify Yourself</Text>
             </View>
             <Ionicons name="chevron-forward-outline" size={24} color="black" />
@@ -1046,3 +1046,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
+

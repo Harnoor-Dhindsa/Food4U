@@ -31,7 +31,7 @@ const SelectionScreen = ({ navigation }) => {
       title: "Admin",
       subtitle:
         "Administrative access for approving menus and verifying chefs.",
-      image: require("../Images/admin.jpg"), // Replace with admin icon image
+      image: require("../Images/admin.png"), // Replace with admin icon image
       onPress: () => navigation.navigate("AdminLogin"), // Replace with admin signin navigation
     },
   ];

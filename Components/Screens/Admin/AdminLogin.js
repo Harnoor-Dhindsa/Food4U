@@ -23,18 +23,28 @@ const AdminLogin = ({ navigation }) => {
 
   const auth = FIREBASE_AUTH;
 
+  const adminEmail = "admin@gmail.com"; // Replace with your admin email
+  const adminPassword = "qwerty"; // Replace with your admin password
+
   const handleSignIn = async () => {
     try {
-      // Sign in the admin
-      await signInWithEmailAndPassword(auth, email, password);
-      await updateExpoPushToken();
-      // Navigate to AdminHomeScreen
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "AdminHomeScreen" }],
-        })
-      );
+      if (email === adminEmail && password === adminPassword) {
+        const response = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        console.log(response);
+        await updateExpoPushToken();
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "AdminHomeScreen" }],
+          })
+        );
+      } else {
+        alert("Invalid admin credentials");
+      }
     } catch (error) {
       console.log(error);
       alert("Check your email and password");
