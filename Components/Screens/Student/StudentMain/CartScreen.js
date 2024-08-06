@@ -35,6 +35,10 @@ const CartScreen = ({ navigation }) => {
     setModalVisible(true);
   };
 
+  const goBack = () => {
+    navigation.goBack();
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.menuContainer}>
       <TouchableOpacity
@@ -63,7 +67,12 @@ const CartScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headingmain}>Cart</Text>
+      <View style={styles.backbutton}>
+            <TouchableOpacity onPress={goBack}>
+              <Ionicons name="arrow-back" size={30} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.headingmain}> Cart</Text>
+          </View>
       {cart.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Nothing in Cart</Text>
@@ -115,6 +124,10 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 70 : 50,
     backgroundColor: "#FFF",
   },
+  backbutton: {
+    flexDirection: "row",
+    marginLeft: 20,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -127,8 +140,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: "bold",
     color: "#000",
-    marginLeft: 20,
-    marginTop: -6,
+    marginLeft: 0,
   },
   menuContainer: {
     flexDirection: "row",
@@ -140,8 +152,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#FE660F'
   },
   menuInfo: {
     flexDirection: "row",

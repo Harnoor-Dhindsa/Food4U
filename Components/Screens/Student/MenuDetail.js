@@ -211,7 +211,7 @@ const MenuDetail = ({ route, navigation }) => {
     const isAlreadyInCart = cart.some(
       (item) => item.id === menu.id && item.selectedPlan === selectedPlan
     );
-
+  
     if (isAlreadyInCart) {
       Alert.alert(
         "Info",
@@ -219,9 +219,19 @@ const MenuDetail = ({ route, navigation }) => {
       );
     } else {
       addToCart(menu, selectedPlan);
-      Alert.alert("Success", "Item has been added to cart");
+      Alert.alert("Success", "Item has been added to cart", [
+        {
+          text: "Go to Cart",
+          onPress: () => navigation.navigate("Cart"), // Ensure 'CartScreen' is the correct name of your cart screen
+        },
+        {
+          text: "OK",
+          style: "cancel",
+        },
+      ]);
     }
   };
+  
 
   const navigateToChat = async () => {
     const user = FIREBASE_AUTH.currentUser;

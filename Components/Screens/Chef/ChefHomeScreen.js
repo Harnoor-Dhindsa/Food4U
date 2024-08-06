@@ -33,23 +33,28 @@ const ChefHomeScreen = () => {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
-                tabBarIcon: ({ color, size }) => {
+                tabBarIcon: ({ color, size, focused }) => {
                     let iconName;
+                    let iconOutlineName;
 
                     if (route.name === 'Home') {
                         iconName = 'home';
+                        iconOutlineName = 'home-outline';
                     } else if (route.name === 'Orders') {
                         iconName = 'receipt';
+                        iconOutlineName = 'receipt-outline';
                     } else if (route.name === 'Chat') {
                         iconName = 'chatbox-ellipses';
+                        iconOutlineName = 'chatbox-ellipses-outline';
                     } else if (route.name === 'Profile') {
                         iconName = 'person-circle';
+                        iconOutlineName = 'person-circle-outline';
                     }
 
-                    return <Ionicons name={iconName} color={color} size={size} />;
+                    return <Ionicons name={focused ? iconName : iconOutlineName} color={color} size={size} />;
                 },
                 tabBarActiveTintColor: '#FE660F',
-                tabBarInactiveTintColor: 'grey',
+                tabBarInactiveTintColor: 'black',
                 tabBarStyle: Platform.OS === 'ios' ? styles.tabBarIOS : styles.tabBar,
                 tabBarLabelStyle: Platform.OS === 'ios' ? styles.tabBarLabelIOS : styles.tabBarLabel,
             })}

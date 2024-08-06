@@ -110,8 +110,10 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: Platform.OS === 'ios' ? 0.2 : 0.2,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: Platform.OS === 'android' ? 2 : 0,
+    borderWidth: 1,
+    borderColor: '#FE660F'
   },
   avatarContainer: {
     marginRight: 10,

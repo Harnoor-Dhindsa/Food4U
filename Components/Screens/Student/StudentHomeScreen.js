@@ -35,34 +35,36 @@ const StudentHomeScreen = ({ navigation }) => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ focused, color, size }) => {
           let iconName;
+          let iconOutlineName;
 
           if (route.name === 'Home') {
             iconName = 'home';
+            iconOutlineName = 'home-outline';
           } else if (route.name === 'Favorites') {
             iconName = 'heart';
-          } else if (route.name === 'Cart') {
-            iconName = 'cart';
+            iconOutlineName = 'heart-outline';
           } else if (route.name === 'Profile') {
-            iconName = 'person';
+            iconName = 'person-circle';
+            iconOutlineName = 'person-circle-outline';
           } else if (route.name === 'Chat') {
             iconName = 'chatbox-ellipses';
+            iconOutlineName = 'chatbox-ellipses-outline';
           }
 
-          return <Ionicons name={iconName} color={color} size={size} />;
+          return <Ionicons name={focused ? iconName : iconOutlineName} color={color} size={size} />;
         },
         tabBarActiveTintColor: '#FE660F',
-        tabBarInactiveTintColor: 'grey',
+        tabBarInactiveTintColor: 'black',
         tabBarStyle: Platform.OS === 'ios' ? styles.tabBarIOS : styles.tabBar,
         tabBarLabelStyle: Platform.OS === 'ios' ? styles.tabBarLabelIOS : styles.tabBarLabel,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Favorites" component={FavScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Chat" component={StudentChatListScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Cart" component={CartScreen} options={{ headerShown: false }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 };

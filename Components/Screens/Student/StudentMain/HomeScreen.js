@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useContext } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,12 @@ import {
   RefreshControl,
   Platform,
   Modal,
+  StatusBar,
 } from "react-native";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { FIREBASE_DB } from "../../../../_utils/FirebaseConfig";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { AppContext } from "../../../others/AppContext";
 
 const HomeScreen = ({ navigation }) => {
   const [menus, setMenus] = useState([]);
@@ -23,26 +25,34 @@ const HomeScreen = ({ navigation }) => {
   const [selectedFilter, setSelectedFilter] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+
   const fetchMenus = async () => {
     try {
       let menusQuery = collection(FIREBASE_DB, "Menus");
-
+  
       if (selectedFilter === "newest") {
         menusQuery = query(menusQuery, orderBy("createdAt", "desc"));
       } else if (selectedFilter === "oldest") {
         menusQuery = query(menusQuery, orderBy("createdAt", "asc"));
+      } else if (selectedFilter === "priceLowToHigh") {
+        menusQuery = query(menusQuery, orderBy("monthlyPrice", "asc"));
+      } else if (selectedFilter === "priceHighToLow") {
+        menusQuery = query(menusQuery, orderBy("monthlyPrice", "desc"));
       }
-
+  
       const menusSnapshot = await getDocs(menusQuery);
       const menusList = menusSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
+  
       setMenus(menusList);
     } catch (error) {
       console.error("Error fetching menus: ", error);
     }
   };
+  
+  
 
   useEffect(() => {
     fetchMenus();
@@ -114,28 +124,50 @@ const HomeScreen = ({ navigation }) => {
     setSelectedFilter(selectedFilter === filter ? null : filter);
     toggleModal();
   };
+  
+
+  const goToCart = () => {
+    navigation.navigate("Cart");
+  };
+
+  const { cart } = useContext(AppContext);
+
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headingmain}>Home</Text>
+      <StatusBar barStyle="dark-content"/>
+      <View style={styles.headingContainer}>
+      <Text style={styles.headingMain}>Home</Text>
+      <View style={styles.iconContainer}>
+      <TouchableOpacity style={styles.cartIcon} onPress={goToCart}>
+      <Ionicons name="cart-outline" size={28} color="#000" />
+      {cart.length > 0 && (
+        <View style={styles.cartBadge}>
+          <Text style={styles.cartBadgeText}>{cart.length}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  </View>
+</View>
+
       <View style={styles.searchBarContainer}>
         <Ionicons
-          name="search"
-          size={24}
-          color="#999"
-          style={styles.searchIcon}
+        name="search"
+        size={24}
+        color="#999"
+        style={styles.searchIcon}
         />
         <TextInput
-          style={styles.searchBar}
-          placeholder="Search by menu heading or dish..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#000"
+        style={styles.searchBar}
+        placeholder="Search by menu heading or dish..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholderTextColor="#000"
         />
+        <TouchableOpacity style={styles.filterButton} onPress={toggleModal}>
+        <Ionicons name="filter" size={24} color="#000" />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.filterButton} onPress={toggleModal}>
-        <Text style={styles.filterButtonText}>Filter</Text>
-      </TouchableOpacity>
       <FlatList
         data={searchQuery ? filteredMenus : menus}
         renderItem={renderMenuItem}
@@ -146,51 +178,84 @@ const HomeScreen = ({ navigation }) => {
         }
       />
       <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={toggleModal}
+  visible={modalVisible}
+  animationType="slide"
+  transparent={true}
+  onRequestClose={toggleModal}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <TouchableOpacity
+        onPress={() => selectFilter("newest")}
+        style={[
+          styles.modalOption,
+          selectedFilter === "newest" && styles.selectedModalOption,
+        ]}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              onPress={() => selectFilter("newest")}
-              style={[
-                styles.modalOption,
-                selectedFilter === "newest" && styles.selectedModalOption,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.modalOptionText,
-                  selectedFilter === "newest" && styles.selectedModalOptionText,
-                ]}
-              >
-                Newest
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => selectFilter("oldest")}
-              style={[
-                styles.modalOption,
-                selectedFilter === "oldest" && styles.selectedModalOption,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.modalOptionText,
-                  selectedFilter === "oldest" && styles.selectedModalOptionText,
-                ]}
-              >
-                Oldest
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={toggleModal} style={styles.modalCancel}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <Text
+          style={[
+            styles.modalOptionText,
+            selectedFilter === "newest" && styles.selectedModalOptionText,
+          ]}
+        >
+          Newest
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => selectFilter("oldest")}
+        style={[
+          styles.modalOption,
+          selectedFilter === "oldest" && styles.selectedModalOption,
+        ]}
+      >
+        <Text
+          style={[
+            styles.modalOptionText,
+            selectedFilter === "oldest" && styles.selectedModalOptionText,
+          ]}
+        >
+          Oldest
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => selectFilter("priceLowToHigh")}
+        style={[
+          styles.modalOption,
+          selectedFilter === "priceLowToHigh" && styles.selectedModalOption,
+        ]}
+      >
+        <Text
+          style={[
+            styles.modalOptionText,
+            selectedFilter === "priceLowToHigh" && styles.selectedModalOptionText,
+          ]}
+        >
+          Price: Low to High
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => selectFilter("priceHighToLow")}
+        style={[
+          styles.modalOption,
+          selectedFilter === "priceHighToLow" && styles.selectedModalOption,
+        ]}
+      >
+        <Text
+          style={[
+            styles.modalOptionText,
+            selectedFilter === "priceHighToLow" && styles.selectedModalOptionText,
+          ]}
+        >
+          Price: High to Low
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={toggleModal} style={styles.modalCancel}>
+        <Text style={styles.modalCancelText}>Cancel</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
     </View>
   );
 };
@@ -208,36 +273,70 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: "#f7f7f7",
     borderRadius: 50,
+    paddingHorizontal: 10,
   },
   searchIcon: {
-    paddingLeft: 10,
-    color: "black",
+    backgroundColor: "#f7f7f7",
+    color: "#000",
   },
-  headingmain: {
+  headingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  headingMain: {
     fontSize: 25,
     fontWeight: "bold",
     color: "#000",
-    marginLeft: 20,
-    marginTop: 20,
+  },
+  cartBadge: {
+    position: "absolute",
+    right: 0,
+    top: 4,
+    backgroundColor: "#FE660F",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cartBadgeText: {
+    color: "#000",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  iconContainer: {
+    flexDirection: 'row',
+  },
+  cartIcon: {
+    padding: 10,
   },
   searchBar: {
-    flex: 1,
+    flex: 0.85, // Adjusted to take up less space
     height: 50,
     paddingLeft: 10,
     paddingRight: 10,
+    backgroundColor: "#f7f7f7",
+    borderRadius: 50,
   },
   filterButton: {
+    flex: 0.15, // Adjusted to take up more space
     padding: 10,
-    backgroundColor: "#FE660F",
     borderRadius: 25,
-    marginHorizontal: 20,
     alignItems: "center",
-    marginTop: 5,
-    marginBottom: 20,
+    justifyContent: "center",
+    marginLeft: 10, // Add margin to separate from search bar
+    marginRight: -10, // Add margin to separate from search bar
   },
   filterButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  flatListContainer: {
+    paddingHorizontal: 20,
+    marginTop: 10,
   },
   flatListContainer: {
     paddingHorizontal: 20,
@@ -253,8 +352,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#FE660F'
   },
   image: {
     width: 50,

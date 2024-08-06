@@ -659,6 +659,13 @@ const ProfileScreen = ({ navigation }) => {
               </View>
               <Ionicons name="chevron-forward-outline" size={24} color="black" />
             </TouchableOpacity>
+            <TouchableOpacity style={styles.option}>
+              <View style={styles.optionContent}>
+                <AntDesign name="questioncircleo" size={24} color="black" />
+                <Text style={styles.optionText}>FAQs</Text>
+              </View>
+              <Ionicons name="chevron-forward-outline" size={24} color="black" />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.option} onPress={handleLogOut}>
               <View style={styles.optionContent}>
                 <Ionicons name="log-out-outline" size={24} color="black" />
