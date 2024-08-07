@@ -11,20 +11,24 @@ import {
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import Ionicons from "react-native-vector-icons/Ionicons"; // Import Ionicons for logout icon
+import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   collection,
   getDocs,
+  getDoc,
   doc,
   deleteDoc,
   addDoc,
+  query,
+  where,
 } from "firebase/firestore";
-import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig"; // Import FIREBASE_AUTH for logout
+import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
 
 const AdminHomeScreen = ({ navigation }) => {
   const [pendingMenus, setPendingMenus] = useState([]);
   const [pendingVerifications, setPendingVerifications] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState(null);
+  const [selectedVerification, setSelectedVerification] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("menus");
 
@@ -42,12 +46,27 @@ const AdminHomeScreen = ({ navigation }) => {
           setPendingMenus(menus);
         } else if (activeSection === "verifications") {
           const verificationSnapshot = await getDocs(
-            collection(FIREBASE_DB, "PendingVerifications")
+            collection(FIREBASE_DB, "PendingVerification")
           );
-          const verifications = verificationSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+          const verifications = await Promise.all(
+            verificationSnapshot.docs.map(async (doc) => {
+              const verificationData = doc.data();
+              const documentsSnapshot = await getDocs(
+                collection(
+                  FIREBASE_DB,
+                  "PendingVerification",
+                  doc.id,
+                  "documents"
+                )
+              );
+              const documents = documentsSnapshot.docs.map((doc) => doc.data());
+              return {
+                id: doc.id,
+                ...verificationData,
+                documents,
+              };
+            })
+          );
           setPendingVerifications(verifications);
         }
       } catch (error) {
@@ -89,6 +108,22 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleApproveVerification = async (verification) => {
     try {
+      // Move from PendingVerifications to Verified
+      const verificationRef = doc(
+        FIREBASE_DB,
+        "PendingVerification",
+        verification.id
+      );
+      const verifiedRef = doc(FIREBASE_DB, "Verified", verification.id);
+
+      // Get the document data
+      const verificationSnap = await getDoc(verificationRef);
+      if (verificationSnap.exists()) {
+        const data = verificationSnap.data();
+        await setDoc(verifiedRef, data); // Add to Verified collection
+        await deleteDoc(verificationRef); // Remove from PendingVerifications
+      }
+
       Alert.alert("Success", "Verification approved successfully.");
       setPendingVerifications(
         pendingVerifications.filter((v) => v.id !== verification.id)
@@ -100,6 +135,7 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleRejectVerification = async (verificationId) => {
     try {
+      await deleteDoc(doc(FIREBASE_DB, "PendingVerification", verificationId));
       Alert.alert("Success", "Verification rejected successfully.");
       setPendingVerifications(
         pendingVerifications.filter((v) => v.id !== verificationId)
@@ -124,7 +160,7 @@ const AdminHomeScreen = ({ navigation }) => {
           onPress: () => {
             FIREBASE_AUTH.signOut()
               .then(() => {
-                navigation.replace("Screen"); // Replace 'Screen' with the actual screen name you want to navigate to
+                navigation.replace("Screen");
               })
               .catch((error) => {
                 Alert.alert("Error", "Error in logging out");
@@ -164,9 +200,23 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const renderVerificationItem = ({ item }) => (
     <View style={styles.verificationContainer}>
-      <Text style={styles.verificationHeading}>
-        Document: {item.documentName}
-      </Text>
+      <Text style={styles.verificationHeading}>Verification ID: {item.id}</Text>
+      {item.documents && item.documents.length > 0 ? (
+        item.documents.map((doc, index) => (
+          <View key={index} style={styles.documentContainer}>
+            <Text style={styles.documentName}>Document: {doc.name}</Text>
+            <TouchableOpacity onPress={() => Linking.openURL(doc.url)}>
+              <Text style={styles.documentLink}>View Document</Text>
+            </TouchableOpacity>
+            <Text style={styles.documentDate}>
+              Uploaded At:{" "}
+              {new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString()}
+            </Text>
+          </View>
+        ))
+      ) : (
+        <Text>No documents available</Text>
+      )}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.approveButton}
@@ -184,11 +234,18 @@ const AdminHomeScreen = ({ navigation }) => {
     </View>
   );
 
+
   const ListHeaderComponent = () => (
     <View>
       {selectedMenu ? (
         <Text style={styles.heading}>{selectedMenu.heading}</Text>
       ) : null}
+    </View>
+  );
+
+  const VerificationListHeader = () => (
+    <View>
+      <Text style={styles.heading}>Pending Verifications</Text>
     </View>
   );
 
@@ -294,7 +351,6 @@ const AdminHomeScreen = ({ navigation }) => {
     </View>
   );
 
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -327,7 +383,11 @@ const AdminHomeScreen = ({ navigation }) => {
           activeSection === "menus" ? renderMenuItem : renderVerificationItem
         }
         keyExtractor={(item) => item.id}
-        ListHeaderComponent={activeSection === "menus" && ListHeaderComponent}
+        ListHeaderComponent={
+          activeSection === "menus"
+            ? ListHeaderComponent
+            : VerificationListHeader
+        }
       />
 
       <Modal
@@ -506,6 +566,31 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     margin: 10,
+  },
+  verificationContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  verificationHeading: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  documentContainer: {
+    marginVertical: 8,
+  },
+  documentName: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  documentDate: {
+    fontSize: 14,
+    color: "#555",
+  },
+  documentUrl: {
+    fontSize: 14,
+    color: "#007BFF",
+    marginVertical: 4,
   },
 });
 

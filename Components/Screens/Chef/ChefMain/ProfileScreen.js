@@ -597,10 +597,6 @@ const ProfileScreen = ({ navigation }) => {
       Alert.alert('Error', 'Error during document pick/upload: ' + error.message);
     }
   };
-  
-  
-  
-  
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content"></StatusBar>
