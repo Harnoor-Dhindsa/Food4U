@@ -149,10 +149,10 @@ const MenuDetail = ({ route, navigation }) => {
       return (
         <View style={styles.itemContainer}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemQuantity}>{item.quantity}</Text>
+          <Text style={styles.itemQuantity}>x{item.quantity}</Text>
           {section.title === "Dessert" && (
             <Text style={styles.itemQuantity}>
-              Available:{" "}
+              {" "}
               {Array.isArray(item.days) ? item.days.join(", ") : item.days}
             </Text>
           )}
@@ -357,7 +357,7 @@ const MenuDetail = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#fff",
   },
   scrollContainer: {
     paddingBottom: 16,
@@ -367,7 +367,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
   },
   backButton: {
     padding: 8,
@@ -385,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: "#EDF3EB",
+    backgroundColor: "#fff",
     borderRadius: 8,
     marginBottom: 16,
   },
@@ -394,11 +396,13 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     marginRight: 16,
+    borderWidth: 1,
+    borderColor: "#FE660F",
   },
   chefNameText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FE660F",
+    color: "#000",
   },
   chatButton: {
     flexDirection: "row",
@@ -409,7 +413,7 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
   },
   chatButtonText: {
-    color: "#FFF",
+    color: "#fff",
     marginLeft: 4,
   },
   chatIcon: {
@@ -444,20 +448,30 @@ const styles = StyleSheet.create({
   },
   availabilityContainer: {
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   availabilityMessage: {
-    fontSize: 14,
-    color: "#555",
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "bold",
   },
+  
   sectionContainer: {
     paddingHorizontal: 16,
   },
   subheading: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#FE660F",
-    paddingVertical: 8,
+    color: "#000",
+    paddingVertical: 10,
+    marginTop: 20,
   },
   itemContainer: {
     flexDirection: "row",
@@ -482,21 +496,29 @@ const styles = StyleSheet.create({
     borderColor: "#FE660F",
     borderWidth: 1,
     marginVertical: 4,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedPlanButton: {
     backgroundColor: "#FE660F",
   },
   planText: {
     fontSize: 16,
-    color: "#333",
+    color: "#000",
+    fontWeight: "bold",
+    marginBottom: 4,
   },
   planDescription: {
     fontSize: 14,
-    color: "#777",
+    color: "#000",
   },
   addToCartButton: {
     backgroundColor: "#FE660F",
-    paddingVertical: 12,
+    paddingVertical: 20,
     borderRadius: 8,
     alignItems: "center",
     margin: 16,

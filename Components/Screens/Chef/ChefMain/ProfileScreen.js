@@ -45,6 +45,7 @@ const ProfileScreen = ({ navigation }) => {
   const [view, setView] = useState("profile");
   const [orderCount, setOrderCount] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const [verificationStatus, setVerificationStatus] = useState('Not Verified');
 
   const user = FIREBASE_AUTH.currentUser;
 
@@ -516,6 +517,20 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  useEffect(() => {
+    const checkPendingVerification = async () => {
+      if (user && user.uid) {
+        const docRef = doc(FIREBASE_DB, 'PendingVerification', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setVerificationStatus('Pending Verification');
+        }
+      }
+    };
+
+    checkPendingVerification();
+  }, [user]);
+
   const handleVerifyAccount = async () => {
     Alert.alert(
       'Upload Document',
@@ -533,41 +548,41 @@ const ProfileScreen = ({ navigation }) => {
       { cancelable: true }
     );
   };
-  
+
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/pdf',
       });
-  
+
       console.log('DocumentPicker result:', result);
-  
-      // Check if the result is not canceled and has assets
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const { uri, name } = result.assets[0];
         console.log('Document URI:', uri);
         console.log('Document Name:', name);
-  
+
         if (!uri) {
           Alert.alert('Invalid Document', 'No document URI found.');
           return;
         }
-  
+
         try {
           const response = await fetch(uri);
           console.log('Fetch response:', response);
           const blob = await response.blob();
-  
+
           const storageRef = ref(FIREBASE_STORAGE, `verificationDocs/${user.uid}`);
           await uploadBytes(storageRef, blob);
           const downloadURL = await getDownloadURL(storageRef);
-  
+
           await addDoc(collection(FIREBASE_DB, 'PendingVerification', user.uid, "documents"), {
             name: name,
             url: downloadURL,
             uploadedAt: new Date(),
           });
-  
+
+          setVerificationStatus('Pending Verification');
           Alert.alert('Upload Successful', 'Document uploaded successfully! Please wait for verification.');
         } catch (fetchError) {
           console.error('Fetch error:', fetchError);
@@ -854,13 +869,13 @@ const ProfileScreen = ({ navigation }) => {
               </View>
               <Ionicons name="chevron-forward-outline" size={24} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handleVerifyAccount}>
-              <View style={styles.optionContent}>
-              <Octicons name="unverified" size={24} color="black" />
-                <Text style={styles.optionText}>Verify Your Account</Text>
-              </View>
-              <Ionicons name="chevron-forward-outline" size={24} color="black" />
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={handleVerifyAccount} disabled={verificationStatus === 'Pending Verification'}>
+      <View style={styles.optionContent}>
+        <Octicons name={verificationStatus === 'Not Verified' ? "unverified" : "unverified"} size={24} color="black" />
+        <Text style={styles.optionText}>{verificationStatus === 'Not Verified' ? "Verify Your Account" : "Pending Verification"}</Text>
+      </View>
+      <Ionicons name="chevron-forward-outline" size={24} color="black" />
+    </TouchableOpacity>
             <TouchableOpacity style={styles.option} onPress={handleLogOut}>
               <View style={styles.optionContent}>
                 <Ionicons name="log-out-outline" size={24} color="black" />
