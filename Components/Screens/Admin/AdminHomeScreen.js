@@ -18,8 +18,11 @@ import {
   doc,
   deleteDoc,
   addDoc,
+  getDoc,
 } from "firebase/firestore";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig"; // Import FIREBASE_AUTH for logout
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Linking } from "react-native";
 
 const AdminHomeScreen = ({ navigation }) => {
   const [pendingMenus, setPendingMenus] = useState([]);
@@ -32,18 +35,14 @@ const AdminHomeScreen = ({ navigation }) => {
     const fetchData = async () => {
       try {
         if (activeSection === "menus") {
-          const menuSnapshot = await getDocs(
-            collection(FIREBASE_DB, "PendingMenus")
-          );
+          const menuSnapshot = await getDocs(collection(FIREBASE_DB, "PendingMenus"));
           const menus = menuSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }));
           setPendingMenus(menus);
         } else if (activeSection === "verifications") {
-          const verificationSnapshot = await getDocs(
-            collection(FIREBASE_DB, "PendingVerifications")
-          );
+          const verificationSnapshot = await getDocs(collection(FIREBASE_DB, "PendingVerification"));
           const verifications = verificationSnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
@@ -54,10 +53,11 @@ const AdminHomeScreen = ({ navigation }) => {
         console.error("Error fetching data: ", error);
       }
     };
-
+  
     fetchData();
   }, [activeSection]);
-
+  
+  
   const handleApproveMenu = async (menu) => {
     try {
       const menuWithOriginalId = { ...menu, originalId: menu.id };
@@ -89,25 +89,44 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleApproveVerification = async (verification) => {
     try {
+      console.log("Verification object:", verification); // Log the verification object
+  
+      const { chefId: userUid, firstName, lastName, id } = verification;
+  
+      if (!firstName || !lastName) {
+        throw new Error("First name or last name is undefined");
+      }
+  
+      await addDoc(collection(FIREBASE_DB, "VerifiedChefs"), {
+        chefId: userUid,
+        firstName: firstName,
+        lastName: lastName,
+      });
+  
+      await deleteDoc(doc(FIREBASE_DB, "PendingVerification", id));
+      
       Alert.alert("Success", "Verification approved successfully.");
       setPendingVerifications(
-        pendingVerifications.filter((v) => v.id !== verification.id)
+        pendingVerifications.filter((v) => v.id !== id)
       );
     } catch (error) {
       Alert.alert("Error", error.message);
     }
   };
+  
 
-  const handleRejectVerification = async (verificationId) => {
+  const handleRejectVerification = async (userUid) => {
     try {
+      await deleteDoc(doc(FIREBASE_DB, "PendingVerification", userUid));
       Alert.alert("Success", "Verification rejected successfully.");
       setPendingVerifications(
-        pendingVerifications.filter((v) => v.id !== verificationId)
+        pendingVerifications.filter((v) => v.userUid !== userUid)
       );
     } catch (error) {
       Alert.alert("Error", error.message);
     }
   };
+  
 
   const handleLogOut = () => {
     Alert.alert(
@@ -163,10 +182,8 @@ const AdminHomeScreen = ({ navigation }) => {
   );
 
   const renderVerificationItem = ({ item }) => (
-    <View style={styles.verificationContainer}>
-      <Text style={styles.verificationHeading}>
-        Document: {item.documentName}
-      </Text>
+    <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
+      <Text>Chef Name: {item.firstName} {item.lastName}</Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.approveButton}
@@ -183,6 +200,11 @@ const AdminHomeScreen = ({ navigation }) => {
       </View>
     </View>
   );
+  
+  
+  
+  
+  
 
   const ListHeaderComponent = () => (
     <View>
@@ -322,13 +344,11 @@ const AdminHomeScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-        data={activeSection === "menus" ? pendingMenus : pendingVerifications}
-        renderItem={
-          activeSection === "menus" ? renderMenuItem : renderVerificationItem
-        }
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={activeSection === "menus" && ListHeaderComponent}
-      />
+  data={activeSection === "menus" ? pendingMenus : pendingVerifications}
+  renderItem={activeSection === "menus" ? renderMenuItem : renderVerificationItem}
+  keyExtractor={(item) => (activeSection === "menus" ? item.id : item.id)}
+  ListHeaderComponent={activeSection === "menus" && ListHeaderComponent}
+/>
 
       <Modal
         transparent={true}
@@ -507,6 +527,21 @@ const styles = StyleSheet.create({
   logoutButton: {
     margin: 10,
   },
+  chefInfoContainer: {
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  chefName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  chefProfilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginVertical: 10,
+  },
+  
 });
 
 export default AdminHomeScreen;

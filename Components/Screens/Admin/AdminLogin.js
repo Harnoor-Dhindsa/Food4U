@@ -34,8 +34,6 @@ const AdminLogin = ({ navigation }) => {
           email,
           password
         );
-        console.log(response);
-        await updateExpoPushToken();
         navigation.dispatch(
           CommonActions.reset({
             index: 0,

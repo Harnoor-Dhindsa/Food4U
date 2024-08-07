@@ -30,8 +30,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from 'expo-file-system';
+import firebase from "firebase/compat/app";
 
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = ({ navigation, currentUserId }) => {
   const [editMode, setEditMode] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -45,7 +46,7 @@ const ProfileScreen = ({ navigation }) => {
   const [view, setView] = useState("profile");
   const [orderCount, setOrderCount] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
-  const [verificationStatus, setVerificationStatus] = useState('Not Verified');
+  const [verificationStatus, setVerificationStatus] = useState('request');
 
   const user = FIREBASE_AUTH.currentUser;
 
@@ -517,90 +518,104 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {
-    const checkPendingVerification = async () => {
-      if (user && user.uid) {
-        const docRef = doc(FIREBASE_DB, 'PendingVerification', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setVerificationStatus('Pending Verification');
-        }
+  const handleButtonClick = async () => {
+    try {
+      // Fetch chef's profile data from Firestore
+      const chefDocRef = doc(collection(FIREBASE_DB, 'ChefsProfiles'), user.uid);
+      const chefDoc = await getDoc(chefDocRef);
+  
+      if (chefDoc.exists()) {
+        const chefData = chefDoc.data();
+  
+        // Add chef's data to the PendingVerification collection
+        await addDoc(collection(FIREBASE_DB, 'PendingVerification'), {
+          chefId: user.uid,
+          firstName: chefData.firstName,
+          lastName: chefData.lastName,
+        });
+  
+        // Function to handle sending the email
+        const handleEmailPress = async () => {
+          const toEmail = 'food4u@gmail.com';
+          const subject = 'Request Verification';
+          const body = 'Hi, I would like to request verification for my account.';
+      
+          const mailtoUrl = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+          try {
+            const supported = await Linking.canOpenURL(mailtoUrl);
+            if (supported) {
+              await Linking.openURL(mailtoUrl);
+            } else {
+              Alert.alert('Email client is not available');
+            }
+          } catch (error) {
+            console.error('An error occurred', error);
+            Alert.alert('An error occurred while trying to open the email client');
+          }
+        };
+  
+        await handleEmailPress();
+      } else {
+        console.error('No such document in chefProfile');
+        Alert.alert('Chef profile not found');
       }
-    };
-
-    checkPendingVerification();
-  }, [user]);
-
-  const handleVerifyAccount = async () => {
-    Alert.alert(
-      'Upload Document',
-      'Please upload your certificate.',
-      [
-        {
-          text: 'Upload',
-          onPress: pickDocument
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        }
-      ],
-      { cancelable: true }
-    );
+    } catch (error) {
+      console.error('Error fetching chef profile or adding to PendingVerification', error);
+      Alert.alert('An error occurred while processing the request');
+    }
   };
 
-  const pickDocument = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-      });
+  useEffect(() => {
+    const checkVerificationStatus = async () => {
+      try {
 
-      console.log('DocumentPicker result:', result);
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const { uri, name } = result.assets[0];
-        console.log('Document URI:', uri);
-        console.log('Document Name:', name);
+        const currentUserId = currentUser.uid;
+        // Query the PendingVerification collection
+        const pendingQuery = query(
+          collection(FIREBASE_DB, 'PendingVerification'),
+          where('chefId', '==', currentUserId)
+        );
+        const pendingSnapshot = await getDocs(pendingQuery);
 
-        if (!uri) {
-          Alert.alert('Invalid Document', 'No document URI found.');
+        if (!pendingSnapshot.empty) {
+          setVerificationStatus('pending');
           return;
         }
 
-        try {
-          const response = await fetch(uri);
-          console.log('Fetch response:', response);
-          const blob = await response.blob();
+        // Query the VerifiedChefs collection
+        const verifiedQuery = query(
+          collection(FIREBASE_DB, 'VerifiedChefs'),
+          where('chefId', '==', currentUserId)
+        );
+        const verifiedSnapshot = await getDocs(verifiedQuery);
 
-          const storageRef = ref(FIREBASE_STORAGE, `verificationDocs/${user.uid}`);
-          await uploadBytes(storageRef, blob);
-          const downloadURL = await getDownloadURL(storageRef);
-
-          await addDoc(collection(FIREBASE_DB, 'PendingVerification', user.uid, "documents"), {
-            name: name,
-            url: downloadURL,
-            uploadedAt: new Date(),
-          });
-
-          setVerificationStatus('Pending Verification');
-          Alert.alert('Upload Successful', 'Document uploaded successfully! Please wait for verification.');
-        } catch (fetchError) {
-          console.error('Fetch error:', fetchError);
-          Alert.alert('Error', 'Error fetching document: ' + fetchError.message);
+        if (!verifiedSnapshot.empty) {
+          setVerificationStatus('verified');
+          return;
         }
-      } else {
-        Alert.alert('Invalid Document', 'Please select a valid document (PDF).');
-        console.log('Invalid document selection:', result);
+      } catch (error) {
+        console.error('Error checking verification status:', error);
       }
-    } catch (error) {
-      console.error('Error during document pick/upload:', error);
-      Alert.alert('Error', 'Error during document pick/upload: ' + error.message);
+    };
+
+    checkVerificationStatus();
+  }, [currentUserId]);
+
+  const getStatusText = () => {
+    switch (verificationStatus) {
+      case 'pending':
+        return 'Pending Verification';
+      case 'verified':
+        return 'Verified';
+      default:
+        return 'Request Verification';
     }
   };
-  
-  
-  
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content"></StatusBar>
@@ -869,10 +884,14 @@ const ProfileScreen = ({ navigation }) => {
               </View>
               <Ionicons name="chevron-forward-outline" size={24} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handleVerifyAccount} disabled={verificationStatus === 'Pending Verification'}>
+            <TouchableOpacity style={styles.option} onPress={handleButtonClick}>
       <View style={styles.optionContent}>
-        <Octicons name={verificationStatus === 'Not Verified' ? "unverified" : "unverified"} size={24} color="black" />
-        <Text style={styles.optionText}>{verificationStatus === 'Not Verified' ? "Verify Your Account" : "Pending Verification"}</Text>
+        <Octicons
+          name={verificationStatus === 'verified' ? 'verified' : 'unverified'}
+          size={24}
+          color="black"
+        />
+        <Text style={styles.optionText}>{getStatusText()}</Text>
       </View>
       <Ionicons name="chevron-forward-outline" size={24} color="black" />
     </TouchableOpacity>
