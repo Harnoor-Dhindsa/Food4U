@@ -28,7 +28,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import CustomModalPicker from "../../../others/CustomModalPicker";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
-import DocumentPicker from "expo-document-picker";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from 'expo-file-system';
 
 const ProfileScreen = ({ navigation }) => {
   const [editMode, setEditMode] = useState(false);
@@ -535,40 +536,55 @@ const ProfileScreen = ({ navigation }) => {
   
   const pickDocument = async () => {
     try {
-      const result = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.pdf, DocumentPicker.types.doc, DocumentPicker.types.docx],
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
       });
   
       console.log('DocumentPicker result:', result);
   
-      if (result) {
-        handleUpload(result.uri, result.name);
+      // Check if the result is not canceled and has assets
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const { uri, name } = result.assets[0];
+        console.log('Document URI:', uri);
+        console.log('Document Name:', name);
+  
+        if (!uri) {
+          Alert.alert('Invalid Document', 'No document URI found.');
+          return;
+        }
+  
+        try {
+          const response = await fetch(uri);
+          console.log('Fetch response:', response);
+          const blob = await response.blob();
+  
+          const storageRef = ref(FIREBASE_STORAGE, `verificationDocs/${user.uid}`);
+          await uploadBytes(storageRef, blob);
+          const downloadURL = await getDownloadURL(storageRef);
+  
+          await addDoc(collection(FIREBASE_DB, 'PendingVerification', user.uid, "documents"), {
+            name: name,
+            url: downloadURL,
+            uploadedAt: new Date(),
+          });
+  
+          Alert.alert('Upload Successful', 'Document uploaded successfully! Please wait for verification.');
+        } catch (fetchError) {
+          console.error('Fetch error:', fetchError);
+          Alert.alert('Error', 'Error fetching document: ' + fetchError.message);
+        }
       } else {
-        Alert.alert('Invalid document', 'Please select a valid document (PDF, DOC, DOCX).');
+        Alert.alert('Invalid Document', 'Please select a valid document (PDF).');
+        console.log('Invalid document selection:', result);
       }
-    } catch (err) {
-      console.error('Error picking document:', err);
+    } catch (error) {
+      console.error('Error during document pick/upload:', error);
+      Alert.alert('Error', 'Error during document pick/upload: ' + error.message);
     }
   };
   
-  const handleUpload = async (uri, name) => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const storageRef = ref(FIREBASE_STORAGE, `PendingVerification/${name}`);
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-      await addDoc(collection(FIREBASE_DB, 'PendingVerification'), {
-        name: name,
-        url: downloadURL,
-        uploadedAt: new Date(),
-      });
-      Alert.alert('Upload Successful', 'Document uploaded successfully! Please wait for verification.');
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      Alert.alert('Error', 'Error uploading document: ' + error.message);
-    }
-  };
+  
+  
   
   return (
     <SafeAreaView style={styles.container}>

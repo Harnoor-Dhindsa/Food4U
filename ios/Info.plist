@@ -1,4 +1,4 @@
 <key>NSPhotoLibraryUsageDescription</key>
- <string>$(PRODUCT_NAME) would like access to your photo gallery</string>
+ <string>$(PRODUCT_NAME) This app needs access to your photo library to upload documents.</string>
 <key>NSCameraUsageDescription</key>
  <string>$(PRODUCT_NAME) would like to use your camera</string>

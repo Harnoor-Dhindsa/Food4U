@@ -1,7 +1,22 @@
 {
   "expo": {
+    "Permissions": [
+      "ACCESS_COARSE_LOCATION",
+      "INTERNET",
+      "CAMERA",
+      "CAMERA_ROLL",
+      "READ_EXTERNAL_STORAGE",
+      "WRITE_EXTERNAL_STORAGE"
+    ],
+    "notification": {
+    "icon": "./assets/adaptive-icon.png",
+    "color": "#311b92",
+    "androidMode": "default",
+    "androidCollapsedTitle": "Updates from Colab.notes",
+    "iosDisplayInForeground": true
+},
     "name": "Food4U",
-    "slug": "Food4U",
+    "slug": "food4u",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,16 +30,42 @@
       "**/*"
     ],
     "ios": {
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload documents."
+      },
       "supportsTablet": true
     },
     "android": {
+      "Permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "INTERNET",
+        "CAMERA",
+        "CAMERA_ROLL",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+  ],
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "49c55b76-29ca-4da9-9fb8-d598ab6051f3"
+      }
+    },
+    "owner": "foru"
   }
 }
