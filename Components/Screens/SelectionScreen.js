@@ -1,21 +1,38 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, Dimensions, } from 'react-native';
+import React from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 
-const { width: viewportWidth } = Dimensions.get('window');
+const { width: viewportWidth } = Dimensions.get("window");
 
 const SelectionScreen = ({ navigation }) => {
   const entries = [
     {
-      title: 'Chef',
-      subtitle: "Cooking requires confident guesswork and improvisation—experimentation and substitution, dealing with failure and uncertainty in a creative way.",
-      image: require('../Images/chef.png'),
-      onPress: () => navigation.navigate('ChefSignup'),
+      title: "Chef",
+      subtitle:
+        "Cooking requires confident guesswork and improvisation—experimentation and substitution, dealing with failure and uncertainty in a creative way.",
+      image: require("../Images/chef.png"),
+      onPress: () => navigation.navigate("ChefSignup"),
     },
     {
-      title: 'Student',
-      subtitle: 'Hi! I would like to have some delicious food. Can you help me?',
-      image: require('../Images/student.png'),
-      onPress: () => navigation.navigate('StudentSignup'),
+      title: "Student",
+      subtitle:
+        "Hi! I would like to have some delicious food. Can you help me?",
+      image: require("../Images/student.png"),
+      onPress: () => navigation.navigate("StudentSignup"),
+    },
+    {
+      title: "Admin",
+      subtitle:
+        "Administrative access for approving menus and verifying chefs.",
+      image: require("../Images/admin.png"), // Replace with admin icon image
+      onPress: () => navigation.navigate("AdminLogin"), // Replace with admin signin navigation
     },
   ];
 
@@ -29,7 +46,11 @@ const SelectionScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollViewContainer}
       >
         {entries.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.option} onPress={item.onPress}>
+          <TouchableOpacity
+            key={index}
+            style={styles.option}
+            onPress={item.onPress}
+          >
             <Image source={item.image} style={styles.image} />
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.subtitle}</Text>
@@ -43,8 +64,8 @@ const SelectionScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 50,
     backgroundColor: "#EDF3EB",
   },
@@ -53,27 +74,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 40,
-    marginTop : 50,
-    color: '#000',
-    fontFamily: 'poppins',
+    marginTop: 50,
+    color: "#000",
+    fontFamily: "poppins",
   },
   scrollViewContainer: {
     marginBottom: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 50,
   },
   option: {
-    alignItems: 'center',
-    backgroundColor: 'white',
+    alignItems: "center",
+    backgroundColor: "white",
     paddingVertical: 40,
     paddingHorizontal: 30,
     borderRadius: 150,
-    borderColor: '#FE660F',
+    borderColor: "#FE660F",
     borderWidth: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -94,15 +115,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 30,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#000',
-    marginTop: 50
+    color: "#000",
+    marginTop: 50,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
-    color: '#888',
+    textAlign: "center",
+    color: "#888",
     paddingHorizontal: 10,
   },
 });

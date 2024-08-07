@@ -20,9 +20,15 @@ const HomeScreen = () => {
 
   const fetchMenus = async () => {
     try {
-      const q = query(collection(FIREBASE_DB, 'Menus'), where('chefId', '==', user.uid));
+      const q = query(
+        collection(FIREBASE_DB, "Menus"),
+        where("chefId", "==", user.uid)
+      );
       const querySnapshot = await getDocs(q);
-      const menusData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const menusData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setMenus(menusData);
     } catch (error) {
       console.error("Error fetching menus: ", error);
@@ -34,27 +40,40 @@ const HomeScreen = () => {
     fetchMenus().finally(() => setRefreshing(false));
   }, [user.uid]);
 
+  // This function would be in the chef's code
   const handleDeleteMenu = async () => {
-    if (selectedMenuId) {
-      try {
-        await deleteDoc(doc(FIREBASE_DB, 'Menus', selectedMenuId));
-        setMenus(menus.filter(menu => menu.id !== selectedMenuId));
-        setModalVisible(false);
-      } catch (error) {
-        console.error("Error deleting menu: ", error);
+    try {
+      // Find the document with the original ID in the Menus collection
+      const menuSnapshot = await getDocs(collection(FIREBASE_DB, "Menus"));
+      const menuDoc = menuSnapshot.docs.find(
+        (doc) => doc.data().originalId === selectedMenuId // Use selectedMenuId here
+      );
+
+      if (menuDoc) {
+        await deleteDoc(doc(FIREBASE_DB, "Menus", menuDoc.id));
+        Alert.alert("Success", "Menu deleted successfully.");
+        setModalVisible(false); // Close the modal after deletion
+        fetchMenus(); // Refresh the list after deletion
+      } else {
+        Alert.alert("Error", "Menu not found.");
       }
+    } catch (error) {
+      Alert.alert("Error", error.message);
     }
   };
 
+
+
   const handleLongPress = (menuId) => {
-    setSelectedMenuId(menuId);
+    setSelectedMenuId(menuId); // Set the ID for deletion
     setModalVisible(true);
   };
+
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.menuContainer}
-      onPress={() => navigation.navigate('ViewMenu', { menu: item })}
+      onPress={() => navigation.navigate("ViewMenu", { menu: item })}
       onLongPress={() => handleLongPress(item.id)}
     >
       {item.avatars && item.avatars.length > 0 ? (
@@ -71,7 +90,7 @@ const HomeScreen = () => {
       <View style={styles.menuContent}>
         <View>
           <Text style={styles.heading}>{item.heading}</Text>
-          <Text style={styles.days}>{item.days.join(', ')}</Text>
+          <Text style={styles.days}>{item.days.join(", ")}</Text>
         </View>
         <Text style={styles.price}>${item.monthlyPrice}</Text>
       </View>
@@ -86,10 +105,15 @@ const HomeScreen = () => {
         data={menus}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         contentContainerStyle={styles.container}
       />
-      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('CreateMenu')}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate("CreateMenu")}
+      >
         <Icon name="add" size={24} color="#fff" />
       </TouchableOpacity>
 
@@ -101,10 +125,12 @@ const HomeScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
-            <Text style={styles.modalText}>Do you want to delete this menu?</Text>
+            <Text style={styles.modalText}>
+              Do you want to delete this menu?
+            </Text>
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={handleDeleteMenu}
+              onPress={handleDeleteMenu} // Updated function call
             >
               <Text style={styles.modalButtonText}>Delete</Text>
             </TouchableOpacity>
@@ -144,7 +170,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#f1f1f1",
+    backgroundColor: "#000",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -164,14 +190,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 15,
     borderRadius: 10,
-    backgroundColor: '#FFF',
+    borderWidth: 2,
+    borderColor: '#FE660F',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
     elevation: 2,
-    borderWidth: 1,
-    borderColor: '#FE660F'
   },
   menuContent: {
     flex: 1,

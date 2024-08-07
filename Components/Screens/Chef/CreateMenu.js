@@ -112,16 +112,21 @@ const handleSaveMenu = async () => {
 
   try {
     if (menu) {
-      const menuDocRef = doc(FIREBASE_DB, "Menus", menu.id);
+      const menuDocRef = doc(FIREBASE_DB, "PendingMenus", menu.id);
       await updateDoc(menuDocRef, menuData);
     } else {
-      await addDoc(collection(FIREBASE_DB, "Menus"), menuData);
+      await addDoc(collection(FIREBASE_DB, "PendingMenus"), menuData);
     }
-    navigation.goBack();
+    Alert.alert(
+      "Menu Submitted",
+      "Your menu has been submitted for admin review. Once approved, it will be visible on the app.",
+      [{ text: "OK", onPress: () => navigation.goBack() }]
+    );
   } catch (error) {
     Alert.alert("Error", error.message);
   }
 };
+
 
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>

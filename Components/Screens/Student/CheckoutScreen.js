@@ -58,7 +58,7 @@ const Checkout = () => {
 
       try {
         const response = await fetch(
-          "http://10.187.218.65:3000/payment-sheet",
+          "http://192.168.1.80:3000/payment-sheet",
           {
             method: "POST",
             headers: {
@@ -139,7 +139,7 @@ const Checkout = () => {
             email,
             createdAt: new Date(),
           });
-
+          
           navigation.goBack();
         }
       }

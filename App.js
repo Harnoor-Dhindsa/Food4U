@@ -23,6 +23,8 @@ import StudentChatScreen from "./Components/Screens/Student/StudentChatScreen";
 import StudentChatListScreen from "./Components/Screens/Student/StudentMain/StudentChatListScreen";
 import CheckoutScreen from "./Components/Screens/Student/CheckoutScreen";
 import CartScreen from "./Components/Screens/Student/StudentMain/CartScreen";
+import AdminLogin from "./Components/Screens/Admin/AdminLogin";
+import AdminHomeScreen from "./Components/Screens/Admin/AdminHomeScreen";
 import { StripeProvider } from "@stripe/stripe-react-native";
 
 const Stack = createStackNavigator();
@@ -137,6 +139,16 @@ export default function App() {
               component={CheckoutScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="AdminLogin"
+              component={AdminLogin}
+              options={{ headerShown: false }}
+              />
+            <Stack.Screen
+              name="AdminHomeScreen"
+              component={AdminHomeScreen}
+              options={{ headerShown: false }}
+              />
           </Stack.Navigator>
         </NavigationContainer>
       </StripeProvider>
