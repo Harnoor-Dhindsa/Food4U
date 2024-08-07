@@ -117,11 +117,16 @@ const handleSaveMenu = async () => {
     } else {
       await addDoc(collection(FIREBASE_DB, "PendingMenus"), menuData);
     }
-    navigation.goBack();
+    Alert.alert(
+      "Menu Submitted",
+      "Your menu has been submitted for admin review. Once approved, it will be visible on the app.",
+      [{ text: "OK", onPress: () => navigation.goBack() }]
+    );
   } catch (error) {
     Alert.alert("Error", error.message);
   }
 };
+
 
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
@@ -306,7 +311,6 @@ const handleSaveMenu = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
-    <Text>Wait for the admin to approve the menu !!!!!</Text>
       <SectionList
         sections={sections}
         keyExtractor={(item, index) => index.toString()}

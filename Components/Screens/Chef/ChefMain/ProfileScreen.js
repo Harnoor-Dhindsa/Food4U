@@ -1,32 +1,45 @@
 import React, { useState, useEffect } from "react";
 import { Linking } from "react-native";
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert, Switch, SafeAreaView,} from "react-native";
 import {
-  View,
-  Text,
-  TextInput,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Alert,
-  Switch,
-  SafeAreaView,
-} from "react-native";
-import { Ionicons, MaterialIcons, AntDesign, FontAwesome, Entypo, SimpleLineIcons, Fontisto, Octicons } from "@expo/vector-icons";
+  Ionicons,
+  MaterialIcons,
+  AntDesign,
+  FontAwesome,
+  Entypo,
+  SimpleLineIcons,
+  Fontisto,
+} from "@expo/vector-icons";
+import {FIREBASE_AUTH,FIREBASE_DB,FIREBASE_STORAGE,} from "../../../../_utils/FirebaseConfig";
 import {
-  FIREBASE_AUTH,
-  FIREBASE_DB,
-  FIREBASE_STORAGE,
-} from "../../../../_utils/FirebaseConfig";
-import { sendPasswordResetEmail, getAuth, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updateEmail, sendEmailVerification, signOut, createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, deleteDoc, getFirestore, collection, getDocs, query, where  } from "firebase/firestore";
+  sendPasswordResetEmail,
+  getAuth,
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updateEmail,
+  sendEmailVerification,
+  signOut,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import CustomModalPicker from "../../../others/CustomModalPicker";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 const ProfileScreen = ({ navigation }) => {
@@ -43,9 +56,6 @@ const ProfileScreen = ({ navigation }) => {
   const [view, setView] = useState("profile");
   const [orderCount, setOrderCount] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
-  const [verificationDoc, setVerificationDoc] = useState(null);
-  const [uploadingDoc, setUploadingDoc] = useState(false);
-
 
   const user = FIREBASE_AUTH.currentUser;
 
@@ -55,57 +65,6 @@ const ProfileScreen = ({ navigation }) => {
       setEmail(user.email); // Set email to the user's email from Firebase Authentication
     }
   }, [user]);
-
-  const handleUploadDocument = async () => {
-    // Request permission to access media library
-    let permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) {
-      alert("Permission to access media library is required!");
-      return;
-    }
-
-    // Launch image picker to select a document
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // You can modify this to select other types of documents
-      allowsEditing: false,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      const { uri } = result.assets[0];
-      setVerificationDoc(uri);
-    }
-  };
-
-  const handleSubmitDocument = async () => {
-    if (!verificationDoc) {
-      alert("No document selected!");
-      return;
-    }
-
-    setUploadingDoc(true);
-    try {
-      const response = await fetch(verificationDoc);
-      const blob = await response.blob();
-      const storageRef = ref(FIREBASE_STORAGE, `verificationDocs/${user.uid}`);
-
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-
-      // Save the URL in Firestore
-      const docRef = doc(FIREBASE_DB, "PendingVerification", user.uid);
-      await setDoc(docRef, { documentURL: downloadURL }, { merge: true });
-
-      alert("Document uploaded successfully!");
-      setVerificationDoc(null);
-    } catch (error) {
-      console.error("Error uploading document:", error);
-      alert("Failed to upload document. Please try again.");
-    } finally {
-      setUploadingDoc(false);
-    }
-  };
 
   const loadUserProfile = async () => {
     const docRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
@@ -155,23 +114,23 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleLogOut = () => {
     Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out?',
+      "Log Out",
+      "Are you sure you want to log out?",
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Log Out',
-          style: 'destructive',
+          text: "Log Out",
+          style: "destructive",
           onPress: () => {
             FIREBASE_AUTH.signOut()
               .then(() => {
-                navigation.replace('Screen'); // Replace 'Screen' with the actual screen name you want to navigate to
+                navigation.replace("Screen"); // Replace 'Screen' with the actual screen name you want to navigate to
               })
               .catch((error) => {
-                alert('Error in logging out');
+                alert("Error in logging out");
               });
           },
         },
@@ -254,7 +213,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const toggleNotifications = async (value) => {
     setNotificationsEnabled(value);
-  
+
     if (value) {
       // Request notification permissions
       const { status } = await Notifications.requestPermissionsAsync();
@@ -263,17 +222,17 @@ const ProfileScreen = ({ navigation }) => {
         setNotificationsEnabled(false);
         return; // Exit early if permissions are not granted
       }
-  
+
       // Get the push token
       const token = await Notifications.getExpoPushTokenAsync();
-      
+
       // Update the user's profile with the token
       if (user) {
         const profileData = {
           notificationsEnabled: value,
           expoPushToken: token, // Store the actual push token
         };
-  
+
         const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
         await setDoc(userRef, profileData, { merge: true });
       }
@@ -284,13 +243,12 @@ const ProfileScreen = ({ navigation }) => {
           notificationsEnabled: value,
           expoPushToken: null, // Set token to null when notifications are disabled
         };
-  
+
         const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
         await setDoc(userRef, profileData, { merge: true });
       }
     }
   };
-  
 
   const handleViewChange = (view) => {
     setView(view);
@@ -308,7 +266,7 @@ const ProfileScreen = ({ navigation }) => {
         {
           text: "Cancel",
           onPress: () => console.log("Password reset cancelled"),
-          style: "cancel"
+          style: "cancel",
         },
         {
           text: "Yes",
@@ -322,8 +280,8 @@ const ProfileScreen = ({ navigation }) => {
                 "Failed to send password reset email. Please check your email address."
               );
             }
-          }
-        }
+          },
+        },
       ],
       { cancelable: false }
     );
@@ -333,12 +291,12 @@ const ProfileScreen = ({ navigation }) => {
     const auth = getAuth();
     const firestore = getFirestore();
     const user = auth.currentUser;
-  
+
     if (!user) {
       alert("No user is currently signed in.");
       return;
     }
-  
+
     Alert.alert(
       "Delete Account",
       "Are you sure you want to delete your account? This action cannot be undone.",
@@ -370,11 +328,11 @@ const ProfileScreen = ({ navigation }) => {
                         inputPassword
                       );
                       await reauthenticateWithCredential(user, credential);
-  
+
                       // Delete user data from Firestore
                       const userDoc = doc(firestore, "ChefsProfiles", user.uid);
                       await deleteDoc(userDoc);
-  
+
                       // Delete the user from Firebase Authentication
                       await deleteUser(user);
                       alert("Your account and data have been deleted.");
@@ -398,31 +356,35 @@ const ProfileScreen = ({ navigation }) => {
   const updateUserEmail = async (newEmail, currentPassword) => {
     const auth = getAuth();
     const user = auth.currentUser;
-  
+
     if (!user) {
       alert("No user is currently signed in.");
       return;
     }
-  
+
     // Reauthenticate User
-    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    const credential = EmailAuthProvider.credential(
+      user.email,
+      currentPassword
+    );
     try {
       await reauthenticateWithCredential(user, credential);
-  
+
       // Update Email in Firebase Authentication
       await updateEmail(user, newEmail);
-      alert("Email updated successfully. Please verify your new email address.");
-  
+      alert(
+        "Email updated successfully. Please verify your new email address."
+      );
+
       // Update Email in Firestore
       const userRef = doc(FIREBASE_DB, "ChefsProfiles", user.uid);
       await setDoc(userRef, { email: newEmail }, { merge: true });
-      
     } catch (error) {
       console.error("Error updating email: ", error);
       alert("Failed to update email. Please try again.");
     }
   };
-  
+
   const handleChangeEmail = () => {
     Alert.prompt(
       "Reauthenticate",
@@ -519,15 +481,18 @@ const ProfileScreen = ({ navigation }) => {
         const currentUser = auth.currentUser;
 
         if (!currentUser) {
-          console.error('No user is logged in');
+          console.error("No user is logged in");
           return;
         }
 
         const currentUserId = currentUser.uid;
 
         // Create a query against the collection with a where clause
-        const ordersCollection = collection(FIREBASE_DB, 'orders');
-        const ordersQuery = query(ordersCollection, where('chefId', '==', currentUserId));
+        const ordersCollection = collection(FIREBASE_DB, "orders");
+        const ordersQuery = query(
+          ordersCollection,
+          where("chefId", "==", currentUserId)
+        );
         const querySnapshot = await getDocs(ordersQuery);
 
         // Count the number of orders
@@ -541,13 +506,13 @@ const ProfileScreen = ({ navigation }) => {
         });
         setTotalEarnings(total);
       } catch (error) {
-        console.error('Error fetching orders:', error);
+        console.error("Error fetching orders:", error);
       }
     };
 
     fetchOrders();
   }, []);
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content"></StatusBar>
@@ -837,32 +802,6 @@ const ProfileScreen = ({ navigation }) => {
             </View>
             <Ionicons name="chevron-forward-outline" size={24} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.option}
-            onPress={handleUploadDocument}
-          >
-            <View style={styles.optionContent}>
-            <Octicons name="unverified" size={24} color="black" />
-              <Text style={styles.optionText}>Verify Yourself</Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={24} color="black" />
-          </TouchableOpacity>
-          {verificationDoc && (
-            <View style={styles.documentUploadContainer}>
-              <Image
-                source={{ uri: verificationDoc }}
-                style={styles.uploadedDocument}
-              />
-              <TouchableOpacity
-                onPress={handleSubmitDocument}
-                style={styles.uploadButton}
-              >
-                <Text style={styles.uploadButtonText}>
-                  {uploadingDoc ? "Uploading..." : "Upload Document"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
           <TouchableOpacity style={styles.option} onPress={handleLogOut}>
             <View style={styles.optionContent}>
               <Ionicons name="log-out-outline" size={24} color="black" />
@@ -887,24 +826,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  documentUploadContainer: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  uploadedDocument: {
-    width: 100,
-    height: 100,
-    marginBottom: 10,
-  },
-  uploadButton: {
-    backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 5,
-  },
-  uploadButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
   },
   header: {
     padding: 20,
@@ -1046,4 +967,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
-

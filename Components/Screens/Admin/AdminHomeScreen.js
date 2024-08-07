@@ -11,6 +11,7 @@ import {
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import Ionicons from "react-native-vector-icons/Ionicons"; // Import Ionicons for logout icon
 import {
   collection,
   getDocs,
@@ -18,7 +19,7 @@ import {
   deleteDoc,
   addDoc,
 } from "firebase/firestore";
-import { FIREBASE_DB } from "../../../_utils/FirebaseConfig";
+import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig"; // Import FIREBASE_AUTH for logout
 
 const AdminHomeScreen = ({ navigation }) => {
   const [pendingMenus, setPendingMenus] = useState([]);
@@ -59,7 +60,10 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleApproveMenu = async (menu) => {
     try {
-      await addDoc(collection(FIREBASE_DB, "Menus"), menu);
+      const menuWithOriginalId = { ...menu, originalId: menu.id };
+      delete menuWithOriginalId.id;
+
+      await addDoc(collection(FIREBASE_DB, "Menus"), menuWithOriginalId);
       await deleteDoc(doc(FIREBASE_DB, "PendingMenus", menu.id));
       Alert.alert("Success", "Menu approved successfully.");
       setPendingMenus(pendingMenus.filter((m) => m.id !== menu.id));
@@ -85,7 +89,6 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleApproveVerification = async (verification) => {
     try {
-      // Implement your approval logic here
       Alert.alert("Success", "Verification approved successfully.");
       setPendingVerifications(
         pendingVerifications.filter((v) => v.id !== verification.id)
@@ -97,7 +100,6 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleRejectVerification = async (verificationId) => {
     try {
-      // Implement your rejection logic here
       Alert.alert("Success", "Verification rejected successfully.");
       setPendingVerifications(
         pendingVerifications.filter((v) => v.id !== verificationId)
@@ -105,6 +107,33 @@ const AdminHomeScreen = ({ navigation }) => {
     } catch (error) {
       Alert.alert("Error", error.message);
     }
+  };
+
+  const handleLogOut = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: () => {
+            FIREBASE_AUTH.signOut()
+              .then(() => {
+                navigation.replace("Screen"); // Replace 'Screen' with the actual screen name you want to navigate to
+              })
+              .catch((error) => {
+                Alert.alert("Error", "Error in logging out");
+              });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const renderMenuItem = ({ item }) => (
@@ -156,95 +185,115 @@ const AdminHomeScreen = ({ navigation }) => {
   );
 
   const ListHeaderComponent = () => (
-    <Text style={styles.heading}>{selectedMenu.heading}</Text>
+    <View>
+      {selectedMenu ? (
+        <Text style={styles.heading}>{selectedMenu.heading}</Text>
+      ) : null}
+    </View>
   );
 
   const ListFooterComponent = () => (
-    <View>
-      <Text style={styles.subheading}>Dessert</Text>
-      {selectedMenu.dessert && (
-        <View style={styles.listItem}>
-          <Text style={styles.itemName}>{selectedMenu.dessert}</Text>
-          <Text style={styles.itemQuantity}>
-            {selectedMenu.dessertQuantity}
-          </Text>
-          <Text style={styles.itemQuantity}>{selectedMenu.dessertDays}</Text>
-        </View>
-      )}
-
-      <Text style={styles.subheading}>Available Days</Text>
-      <View style={styles.daysContainer}>
-        {selectedMenu.days.map((day, index) => (
-          <Text key={index} style={styles.dayItem}>
-            {day}
-          </Text>
-        ))}
-      </View>
-
-      <Text style={styles.subheading}>Prices</Text>
-      <View style={styles.priceTable}>
-        <View style={styles.priceRow}>
-          <Text style={styles.priceLabel}>Daily Price:</Text>
-          <Text style={styles.priceValue}>${selectedMenu.dailyPrice}</Text>
-        </View>
-        <View style={styles.priceRow}>
-          <Text style={styles.priceLabel}>Weekly Price:</Text>
-          <Text style={styles.priceValue}>${selectedMenu.weeklyPrice}</Text>
-        </View>
-        <View style={styles.priceRow}>
-          <Text style={styles.priceLabel}>Monthly Price:</Text>
-          <Text style={styles.priceValue}>${selectedMenu.monthlyPrice}</Text>
-        </View>
-      </View>
-
-      {selectedMenu.avatars && selectedMenu.avatars.length > 0 && (
-        <View style={styles.imageContainer}>
-          {selectedMenu.avatars.map((avatar, index) => (
-            <Image key={index} source={{ uri: avatar }} style={styles.image} />
+    <View style={styles.footerContainer}>
+      {selectedMenu && selectedMenu.items && selectedMenu.items.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.subheading}>Menu Items</Text>
+          {selectedMenu.items.map((item, index) => (
+            <View key={index} style={styles.itemRow}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+            </View>
           ))}
         </View>
       )}
 
-      <Text style={styles.subheading}>Pickup & Delivery</Text>
-      <View style={styles.optionContainer}>
-        <TouchableOpacity
-          style={[
-            styles.optionButton,
-            selectedMenu.pickup
-              ? styles.selectedOption
-              : styles.unselectedOption,
-          ]}
-          disabled={!selectedMenu.pickup}
-        >
-          <Text style={styles.optionText}>Pickup</Text>
-          {selectedMenu.pickup && (
-            <Text style={styles.optionText}>
-              Address: {selectedMenu.pickupAddress}
-            </Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.optionButton,
-            selectedMenu.delivery
-              ? styles.selectedOption
-              : styles.unselectedOption,
-          ]}
-          disabled={!selectedMenu.delivery}
-        >
-          <Text style={styles.optionText}>Delivery</Text>
-        </TouchableOpacity>
-      </View>
+      {selectedMenu && selectedMenu.days && (
+        <View style={styles.section}>
+          <Text style={styles.subheading}>Available Days</Text>
+          <View style={styles.daysContainer}>
+            {selectedMenu.days.map((day, index) => (
+              <Text key={index} style={styles.dayItem}>
+                {day}
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
 
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => navigation.navigate("EditMenu", { menu: selectedMenu })}
-      >
-        <Icon name="edit" size={24} color="#fff" />
-        <Text style={styles.editButtonText}>Edit Menu</Text>
-      </TouchableOpacity>
+      {selectedMenu &&
+        (selectedMenu.dailyPrice ||
+          selectedMenu.weeklyPrice ||
+          selectedMenu.monthlyPrice) && (
+          <View style={styles.section}>
+            <Text style={styles.subheading}>Prices</Text>
+            <View style={styles.priceTable}>
+              {selectedMenu.dailyPrice && (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Daily Price:</Text>
+                  <Text style={styles.priceValue}>
+                    ${selectedMenu.dailyPrice}
+                  </Text>
+                </View>
+              )}
+              {selectedMenu.weeklyPrice && (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Weekly Price:</Text>
+                  <Text style={styles.priceValue}>
+                    ${selectedMenu.weeklyPrice}
+                  </Text>
+                </View>
+              )}
+              {selectedMenu.monthlyPrice && (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Monthly Price:</Text>
+                  <Text style={styles.priceValue}>
+                    ${selectedMenu.monthlyPrice}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+      {selectedMenu &&
+        selectedMenu.avatars &&
+        selectedMenu.avatars.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.subheading}>Photos</Text>
+            <View style={styles.imageContainer}>
+              {selectedMenu.avatars.map((avatar, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: avatar }}
+                  style={styles.image}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+      {selectedMenu && (selectedMenu.pickup || selectedMenu.delivery) && (
+        <View style={styles.section}>
+          <Text style={styles.subheading}>Pickup & Delivery</Text>
+          <View style={styles.optionContainer}>
+            {selectedMenu.pickup && (
+              <View style={styles.optionButton}>
+                <Text style={styles.optionText}>Pickup</Text>
+                <Text style={styles.optionText}>
+                  Address: {selectedMenu.pickupAddress}
+                </Text>
+              </View>
+            )}
+            {selectedMenu.delivery && (
+              <View style={styles.optionButton}>
+                <Text style={styles.optionText}>Delivery</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
     </View>
   );
+
 
   return (
     <View style={styles.container}>
@@ -256,7 +305,7 @@ const AdminHomeScreen = ({ navigation }) => {
           ]}
           onPress={() => setActiveSection("menus")}
         >
-          <Text style={styles.navButtonText}>Pending Menus</Text>
+          <Text>Pending Menu</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -265,51 +314,42 @@ const AdminHomeScreen = ({ navigation }) => {
           ]}
           onPress={() => setActiveSection("verifications")}
         >
-          <Text style={styles.navButtonText}>Pending Verifications</Text>
+          <Text>Pending Verification</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
+          <Ionicons name="exit-outline" size={24} color="black" />
         </TouchableOpacity>
       </View>
-      {activeSection === "menus" ? (
-        pendingMenus.length > 0 ? (
-          <FlatList
-            data={pendingMenus}
-            keyExtractor={(item) => item.id}
-            renderItem={renderMenuItem}
-          />
-        ) : (
-          <Text style={styles.emptyText}>No pending menus at the moment.</Text>
-        )
-      ) : pendingVerifications.length > 0 ? (
-        <FlatList
-          data={pendingVerifications}
-          keyExtractor={(item) => item.id}
-          renderItem={renderVerificationItem}
-        />
-      ) : (
-        <Text style={styles.emptyText}>
-          No pending verifications at the moment.
-        </Text>
-      )}
-      {selectedMenu && (
-        <Modal
-          visible={modalVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <ScrollView contentContainerStyle={styles.modalContent}>
-              <ListHeaderComponent />
-              <ListFooterComponent />
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </ScrollView>
+
+      <FlatList
+        data={activeSection === "menus" ? pendingMenus : pendingVerifications}
+        renderItem={
+          activeSection === "menus" ? renderMenuItem : renderVerificationItem
+        }
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={activeSection === "menus" && ListHeaderComponent}
+      />
+
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <ScrollView>
+            <ListHeaderComponent />
+            <ListFooterComponent />
+          </ScrollView>
+          <View style={styles.modalButtonContainer}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
-      )}
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -318,136 +358,93 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 50,
     flex: 1,
-    backgroundColor: "#EDF3EB",
     padding: 16,
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
-  navButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    backgroundColor: "#C2C2C2",
-  },
-  activeNavButton: {
-    backgroundColor: "#1E6F5C",
-  },
-  navButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
   menuContainer: {
-    backgroundColor: "#fff",
     padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  verificationContainer: {
-    backgroundColor: "#fff",
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
   },
   menuHeading: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 8,
-  },
-  verificationHeading: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    marginTop: 8,
   },
   detailsButton: {
-    backgroundColor: "#1E6F5C",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: "#007BFF",
+    padding: 10,
     borderRadius: 5,
   },
   approveButton: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: "#28a745",
+    padding: 10,
     borderRadius: 5,
   },
   rejectButton: {
-    backgroundColor: "#F44336",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: "#dc3545",
+    padding: 10,
     borderRadius: 5,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
   },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "#888",
-  },
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
+    padding: 16,
     backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 20,
-    width: "90%",
+  },
+  modalButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 16,
   },
   closeButton: {
-    marginTop: 20,
-    backgroundColor: "#1E6F5C",
-    paddingVertical: 10,
+    backgroundColor: "#6c757d",
+    padding: 10,
     borderRadius: 5,
   },
   closeButtonText: {
     color: "#fff",
-    textAlign: "center",
     fontWeight: "bold",
   },
+  footerContainer: {
+    padding: 16,
+  },
   heading: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   subheading: {
     fontSize: 18,
     fontWeight: "bold",
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 5,
   },
-  listItem: {
+  section: {
+    marginBottom: 16,
+  },
+  itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    paddingVertical: 4,
   },
   itemName: {
     fontSize: 16,
-    flex: 1,
   },
   itemQuantity: {
     fontSize: 16,
-    flex: 1,
-    textAlign: "right",
+    color: "#555",
   },
   daysContainer: {
     flexDirection: "row",
@@ -455,17 +452,17 @@ const styles = StyleSheet.create({
   },
   dayItem: {
     backgroundColor: "#f0f0f0",
-    padding: 8,
+    padding: 6,
     borderRadius: 5,
-    margin: 4,
+    margin: 2,
   },
   priceTable: {
-    marginTop: 16,
+    marginTop: 10,
   },
   priceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    paddingVertical: 4,
   },
   priceLabel: {
     fontSize: 16,
@@ -475,52 +472,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   imageContainer: {
-    marginTop: 16,
     flexDirection: "row",
     flexWrap: "wrap",
   },
   image: {
     width: 100,
     height: 100,
-    margin: 4,
-    borderRadius: 8,
+    margin: 5,
+    borderRadius: 10,
   },
   optionContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 16,
   },
   optionButton: {
-    flex: 1,
-    paddingVertical: 10,
+    backgroundColor: "#007BFF",
+    padding: 10,
     borderRadius: 5,
-    margin: 4,
-    justifyContent: "center",
+    margin: 5,
+    flex: 1,
     alignItems: "center",
-  },
-  selectedOption: {
-    backgroundColor: "#4CAF50",
-  },
-  unselectedOption: {
-    backgroundColor: "#C2C2C2",
   },
   optionText: {
     color: "#fff",
     fontWeight: "bold",
   },
-  editButton: {
-    marginTop: 20,
-    backgroundColor: "#1E6F5C",
-    paddingVertical: 10,
-    borderRadius: 5,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+  navButton: {
+    margin: 10,
   },
-  editButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    marginLeft: 8,
+  activeNavButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#007BFF",
+  },
+  logoutButton: {
+    margin: 10,
   },
 });
 
