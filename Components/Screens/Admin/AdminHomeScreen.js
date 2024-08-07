@@ -11,18 +11,15 @@ import {
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import Ionicons from "react-native-vector-icons/Ionicons"; // Import Ionicons for logout icon
+import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   collection,
   getDocs,
   doc,
   deleteDoc,
   addDoc,
-  getDoc,
 } from "firebase/firestore";
-import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig"; // Import FIREBASE_AUTH for logout
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { Linking } from "react-native";
+import { FIREBASE_DB, FIREBASE_AUTH } from "../../../_utils/FirebaseConfig";
 
 const AdminHomeScreen = ({ navigation }) => {
   const [pendingMenus, setPendingMenus] = useState([]);
@@ -30,34 +27,40 @@ const AdminHomeScreen = ({ navigation }) => {
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("menus");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      if (activeSection === "menus") {
+        const menuSnapshot = await getDocs(
+          collection(FIREBASE_DB, "PendingMenus")
+        );
+        const menus = menuSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setPendingMenus(menus);
+      } else if (activeSection === "verifications") {
+        const verificationSnapshot = await getDocs(
+          collection(FIREBASE_DB, "PendingVerification")
+        );
+        const verifications = verificationSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setPendingVerifications(verifications);
+      }
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (activeSection === "menus") {
-          const menuSnapshot = await getDocs(collection(FIREBASE_DB, "PendingMenus"));
-          const menus = menuSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setPendingMenus(menus);
-        } else if (activeSection === "verifications") {
-          const verificationSnapshot = await getDocs(collection(FIREBASE_DB, "PendingVerification"));
-          const verifications = verificationSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setPendingVerifications(verifications);
-        }
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-      }
-    };
-  
     fetchData();
   }, [activeSection]);
-  
-  
+
   const handleApproveMenu = async (menu) => {
     try {
       const menuWithOriginalId = { ...menu, originalId: menu.id };
@@ -89,31 +92,25 @@ const AdminHomeScreen = ({ navigation }) => {
 
   const handleApproveVerification = async (verification) => {
     try {
-      console.log("Verification object:", verification); // Log the verification object
-  
       const { chefId: userUid, firstName, lastName, id } = verification;
-  
+
       if (!firstName || !lastName) {
         throw new Error("First name or last name is undefined");
       }
-  
+
       await addDoc(collection(FIREBASE_DB, "VerifiedChefs"), {
         chefId: userUid,
         firstName: firstName,
         lastName: lastName,
       });
-  
+
       await deleteDoc(doc(FIREBASE_DB, "PendingVerification", id));
-      
       Alert.alert("Success", "Verification approved successfully.");
-      setPendingVerifications(
-        pendingVerifications.filter((v) => v.id !== id)
-      );
+      setPendingVerifications(pendingVerifications.filter((v) => v.id !== id));
     } catch (error) {
       Alert.alert("Error", error.message);
     }
   };
-  
 
   const handleRejectVerification = async (userUid) => {
     try {
@@ -126,7 +123,6 @@ const AdminHomeScreen = ({ navigation }) => {
       Alert.alert("Error", error.message);
     }
   };
-  
 
   const handleLogOut = () => {
     Alert.alert(
@@ -182,8 +178,10 @@ const AdminHomeScreen = ({ navigation }) => {
   );
 
   const renderVerificationItem = ({ item }) => (
-    <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
-      <Text>Chef Name: {item.firstName} {item.lastName}</Text>
+    <View style={styles.verificationContainer}>
+      <Text style={styles.verificationText}>
+        Chef Name: {item.firstName} {item.lastName}
+      </Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.approveButton}
@@ -200,11 +198,6 @@ const AdminHomeScreen = ({ navigation }) => {
       </View>
     </View>
   );
-  
-  
-  
-  
-  
 
   const ListHeaderComponent = () => (
     <View>
@@ -298,16 +291,23 @@ const AdminHomeScreen = ({ navigation }) => {
           <Text style={styles.subheading}>Pickup & Delivery</Text>
           <View style={styles.optionContainer}>
             {selectedMenu.pickup && (
-              <View style={styles.optionButton}>
-                <Text style={styles.optionText}>Pickup</Text>
-                <Text style={styles.optionText}>
-                  Address: {selectedMenu.pickupAddress}
-                </Text>
+              <View style={styles.optionRow}>
+                <Text style={styles.optionLabel}>Pickup:</Text>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="green"
+                />
               </View>
             )}
             {selectedMenu.delivery && (
-              <View style={styles.optionButton}>
-                <Text style={styles.optionText}>Delivery</Text>
+              <View style={styles.optionRow}>
+                <Text style={styles.optionLabel}>Delivery:</Text>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="green"
+                />
               </View>
             )}
           </View>
@@ -316,58 +316,75 @@ const AdminHomeScreen = ({ navigation }) => {
     </View>
   );
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <Text style={styles.title}>Admin Dashboard</Text>
+        <Icon name="logout" size={24} color="red" onPress={handleLogOut} />
+      </View>
+      <View style={styles.buttonSection}>
         <TouchableOpacity
           style={[
-            styles.navButton,
-            activeSection === "menus" && styles.activeNavButton,
+            styles.sectionButton,
+            activeSection === "menus" && styles.activeButton,
           ]}
           onPress={() => setActiveSection("menus")}
         >
-          <Text>Pending Menu</Text>
+          <Text
+            style={[
+              styles.sectionButtonText,
+              activeSection === "menus" && styles.activeButtonText,
+            ]}
+          >
+            Pending Menus
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[
-            styles.navButton,
-            activeSection === "verifications" && styles.activeNavButton,
+            styles.sectionButton,
+            activeSection === "verifications" && styles.activeButton,
           ]}
           onPress={() => setActiveSection("verifications")}
         >
-          <Text>Pending Verification</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
-          <Ionicons name="exit-outline" size={24} color="black" />
+          <Text
+            style={[
+              styles.sectionButtonText,
+              activeSection === "verifications" && styles.activeButtonText,
+            ]}
+          >
+            Pending Verifications
+          </Text>
         </TouchableOpacity>
       </View>
-
       <FlatList
-  data={activeSection === "menus" ? pendingMenus : pendingVerifications}
-  renderItem={activeSection === "menus" ? renderMenuItem : renderVerificationItem}
-  keyExtractor={(item) => (activeSection === "menus" ? item.id : item.id)}
-  ListHeaderComponent={activeSection === "menus" && ListHeaderComponent}
-/>
-
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+        data={activeSection === "menus" ? pendingMenus : pendingVerifications}
+        keyExtractor={(item) => item.id}
+        renderItem={
+          activeSection === "menus" ? renderMenuItem : renderVerificationItem
+        }
+        contentContainerStyle={styles.listContent}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+      <Modal visible={modalVisible} animationType="slide">
         <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
           <ScrollView>
             <ListHeaderComponent />
             <ListFooterComponent />
           </ScrollView>
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </Modal>
     </View>
@@ -376,42 +393,89 @@ const AdminHomeScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 50,
+    paddingTop: 50,
     flex: 1,
-    padding: 16,
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  buttonSection: {
+    paddingVertical: 10,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 10,
+  },
+  sectionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 25,
+    backgroundColor: "#d3d3d3",
+  },
+  activeButton: {
+    backgroundColor: "#000",
+  },
+  sectionButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  activeButtonText: {
+    color: "#fff",
+  },
+  listContent: {
+    paddingBottom: 50,
   },
   menuContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    backgroundColor: "#f5f5f5",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  verificationContainer: {
+    backgroundColor: "#f5f5f5",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   menuHeading: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "#000",
+    marginBottom: 5,
+  },
+  verificationText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 5,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 8,
   },
   detailsButton: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "gray",
     padding: 10,
     borderRadius: 5,
   },
   approveButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#4CAF50",
     padding: 10,
     borderRadius: 5,
   },
   rejectButton: {
-    backgroundColor: "#dc3545",
+    backgroundColor: "#F44336",
     padding: 10,
     borderRadius: 5,
   },
@@ -420,76 +484,79 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   modalContainer: {
+    marginTop: 30,
     flex: 1,
-    padding: 16,
     backgroundColor: "#fff",
+    padding: 20,
   },
-  modalButtonContainer: {
+  modalHeader: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 16,
   },
-  closeButton: {
-    backgroundColor: "#6c757d",
+  modalCloseButton: {
     padding: 10,
-    borderRadius: 5,
-  },
-  closeButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  footerContainer: {
-    padding: 16,
   },
   heading: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
+    color: "#000",
+    marginBottom: 15,
   },
-  subheading: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+  footerContainer: {
+    paddingBottom: 50,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 15,
+  },
+  subheading: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 10,
   },
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    marginBottom: 10,
   },
   itemName: {
     fontSize: 16,
+    color: "#000",
   },
   itemQuantity: {
     fontSize: 16,
-    color: "#555",
+    color: "#000",
   },
   daysContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
   dayItem: {
-    backgroundColor: "#f0f0f0",
-    padding: 6,
+    backgroundColor: "#d3d3d3",
+    padding: 5,
     borderRadius: 5,
-    margin: 2,
+    marginRight: 5,
+    marginBottom: 5,
+    fontSize: 16,
+    color: "#000",
   },
   priceTable: {
-    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#000",
   },
   priceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: 5,
   },
   priceLabel: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#000",
   },
   priceValue: {
     fontSize: 16,
+    color: "#000",
   },
   imageContainer: {
     flexDirection: "row",
@@ -498,50 +565,24 @@ const styles = StyleSheet.create({
   image: {
     width: 100,
     height: 100,
-    margin: 5,
-    borderRadius: 10,
+    marginRight: 5,
+    marginBottom: 5,
+    borderRadius: 5,
   },
   optionContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  optionButton: {
-    backgroundColor: "#007BFF",
-    padding: 10,
-    borderRadius: 5,
-    margin: 5,
-    flex: 1,
+  optionRow: {
+    flexDirection: "row",
     alignItems: "center",
   },
-  optionText: {
-    color: "#fff",
+  optionLabel: {
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#000",
+    marginRight: 5,
   },
-  navButton: {
-    margin: 10,
-  },
-  activeNavButton: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#007BFF",
-  },
-  logoutButton: {
-    margin: 10,
-  },
-  chefInfoContainer: {
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  chefName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  chefProfilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginVertical: 10,
-  },
-  
 });
 
 export default AdminHomeScreen;
