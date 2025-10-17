@@ -1,12 +1,11 @@
-// Import the functions you need from the SDKs you need
+// firebase.js
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { Platform } from 'react-native';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
-// Your web app's Firebase configuration
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDNtUG-gfnY3lfPMOBUGRMKH_hG6Kzx3gk",
   authDomain: "food4u-a0784.firebaseapp.com",
@@ -17,24 +16,16 @@ const firebaseConfig = {
   measurementId: "G-0FMMB9KSJY"
 };
 
+
 // Initialize Firebase App
-let FIREBASE_APP;
-if (!getApps().length) {
-  FIREBASE_APP = initializeApp(firebaseConfig);
-} else {
-  FIREBASE_APP = getApps()[0];
-}
+const FIREBASE_APP = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Initialize Firebase Auth with persistence
-let FIREBASE_AUTH;
-if (Platform.OS === 'android') {
-  FIREBASE_AUTH = initializeAuth(FIREBASE_APP, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-} else {
-  FIREBASE_AUTH = getAuth(FIREBASE_APP);
-}
+// Initialize Auth with persistence on all React Native platforms
+const FIREBASE_AUTH = initializeAuth(FIREBASE_APP, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 
+// Firestore & Storage
 const FIREBASE_DB = getFirestore(FIREBASE_APP);
 const FIREBASE_STORAGE = getStorage(FIREBASE_APP);
 
